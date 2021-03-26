@@ -2,8 +2,8 @@
 Multi-trading library in .NET
 
 #### Features
-- support any list
-- support userlist-passlist
+- Supports any list
+- Supports userlist-passlist
 - Supports list position adjustment
 
 #### Events
