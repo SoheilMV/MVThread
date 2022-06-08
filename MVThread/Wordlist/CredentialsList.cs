@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace MVThread.Wordlist
 {
@@ -11,29 +8,63 @@ namespace MVThread.Wordlist
     {
         private readonly object _obj = new object();
         private ComboType _type;
-        private List<string> _list1;
-        private List<string> _list2;
+        private List<IEnumerable<string>> _list1;
+        private List<IEnumerable<string>> _list2;
 
-        private int row = 0;
-        private int cell = 0;
-        private int calc = 0;
+        private int _calculate = 0;
+        private int _row = 0;
+        private int _cell = 0;
 
-        public CredentialsList(List<string> usernames, List<string> passwords, ComboType type = ComboType.ChangePass, int position = 0)
+        public CredentialsList(IEnumerable<string> usernames, IEnumerable<string> passwords, ComboType type = ComboType.ChangePass, int position = 0)
         {
+            _list1 = new List<IEnumerable<string>>();
+            _list2 = new List<IEnumerable<string>>();
+
             _type = type;
-            _list1 = new List<string>(usernames);
-            _list2 = new List<string>(passwords);
-            if (position > 0 && position < Count)
+
+            var userlist = usernames.ToList();
+            while (userlist.Count > 0)
             {
-                SetPosition(position);
+                string[] array = new string[10000];
+                if (userlist.Count >= 10000)
+                {
+                    userlist.CopyTo(0, array, 0, 10000);
+                    _list1.Add(array);
+                    userlist.RemoveRange(0, 10000);
+                }
+                else
+                {
+                    _list1.Add(userlist.ToArray());
+                    userlist.RemoveRange(0, userlist.Count);
+                }
             }
+
+            var passlist = passwords.ToList();
+            while (passlist.Count > 0)
+            {
+                string[] array = new string[10000];
+                if (passlist.Count >= 10000)
+                {
+                    passlist.CopyTo(0, array, 0, 10000);
+                    _list2.Add(array);
+                    passlist.RemoveRange(0, 10000);
+                }
+                else
+                {
+                    _list2.Add(passlist.ToArray());
+                    passlist.RemoveRange(0, passlist.Count);
+                }
+            }
+
+            if (position > 0 && position < Count)
+                SetPosition(position);
         }
 
         public int Position
         {
             get
             {
-                return calc;
+                return _calculate;
             }
         }
 
@@ -41,7 +72,7 @@ namespace MVThread.Wordlist
         {
             get
             {
-                return (_list1.Count * _list2.Count) - calc;
+                return (GetUsersCount() * GetPasswordsCount());
             }
         }
 
@@ -49,7 +80,7 @@ namespace MVThread.Wordlist
         {
             get
             {
-                return (_list1.Count * _list2.Count) - calc > 0;
+                return Count - _calculate > 0;
             }
         }
 
@@ -57,35 +88,12 @@ namespace MVThread.Wordlist
         {
             lock (_obj)
             {
-                if (HasNext)
-                {
-                    string user = _list1[row];
-                    string pass = _list2[cell];
-                    if (_type == ComboType.ChangePass)
-                    {
-                        if (cell == _list2.Count - 1)
-                        {
-                            cell = 0;
-                            row++;
-                        }
-                        else
-                            cell++;
-                    }
-                    else
-                    {
-                        if (row == _list1.Count - 1)
-                        {
-                            row = 0;
-                            cell++;
-                        }
-                        else
-                            row++;
-                    }
-                    calc++;
-                    return $"{user}:{pass}";
-                }
-                else
-                    throw new Exception("Empty");
+                var userIndex = GetIndex(_row);
+                var passIndex = GetIndex(_cell);
+                string user = _list1[userIndex[0]].ElementAt(userIndex[1]);
+                string pass = _list2[passIndex[0]].ElementAt(passIndex[1]);
+                SetPosition(1);
+                return $"{user.Trim()}:{pass.Trim()}";
             }
         }
 
@@ -95,26 +103,67 @@ namespace MVThread.Wordlist
             {
                 if (_type == ComboType.ChangePass)
                 {
-                    if (cell == _list2.Count - 1)
+                    if (_cell == GetPasswordsCount() - 1)
                     {
-                        cell = 0;
-                        row++;
+                        _cell = 0;
+                        _row++;
                     }
                     else
-                        cell++;
+                        _cell++;
                 }
                 else
                 {
-                    if (row == _list1.Count - 1)
+                    if (_row == GetUsersCount() - 1)
                     {
-                        row = 0;
-                        cell++;
+                        _row = 0;
+                        _cell++;
                     }
                     else
-                        row++;
+                        _row++;
                 }
-                calc++;
+                _calculate++;
             }
+        }
+
+        private int GetUsersCount()
+        {
+            int count = 0;
+            foreach (var list in _list1)
+            {
+                count += list.Count();
+            }
+            return count;
+        }
+
+        private int GetPasswordsCount()
+        {
+            int count = 0;
+            foreach (var list in _list2)
+            {
+                count += list.Count();
+            }
+            return count;
+        }
+
+        private int[] GetIndex(int position)
+        {
+            int i = 0;
+            int pos = 0;
+
+            while (true)
+            {
+                if (position < 10000 || position < ((i + 1) * 10000))
+                    break;
+                else
+                    i++;
+            }
+
+            if (position < 10000)
+                pos = position;
+            else
+                pos = position - (i * 10000);
+
+            return new int[] { i, pos };
         }
     }
 }
