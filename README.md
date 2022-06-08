@@ -118,10 +118,10 @@ private static void Run_OnConfig(object sender, DataEventArgs e)
 		return Status.TheEnd; //In certain circumstances, you can stop all the threads if you wish
 		
 	if (e.Proxy != null) //Get a proxy at random
-    {
-        string address = e.Proxy.Address;
-        ProxyType type = e.Proxy.Type;
-    }
+    	{
+        	string address = e.Proxy.Address;
+        	ProxyType type = e.Proxy.Type;
+    	}
 
 	try
 	{
