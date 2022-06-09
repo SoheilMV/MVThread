@@ -39,10 +39,10 @@ static void Main(string[] args)
 	runner.Start(2); //Add bot count in runner and start the runner
 	
 	while (runner.IsRunning)
-    {
-        Console.Title = $"Bot : {runner.Active} - CPM : {runner.CPM} - Elapsed : {runner.Elapsed} ";
-        Thread.Sleep(100);
-    }
+    	{
+        	Console.Title = $"Bot : {runner.Active} - CPM : {runner.CPM} - Elapsed : {runner.Elapsed} ";
+        	Thread.Sleep(100);
+    	}
 	
 	Console.ReadKey();
 }
