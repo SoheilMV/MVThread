@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace MVThread.File
+namespace MVThread
 {
-    internal class Save : ISave
+    public class Save : ISave
     {
         private readonly object _obj = new object();
 

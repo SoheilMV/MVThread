@@ -1,41 +1,41 @@
-﻿using MVThread.Datas;
-using MVThread.Events;
-using MVThread.File;
-using MVThread.Proxylist;
-using MVThread.Wordlist;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace MVThread
 {
     public class TaskRunner : IRunner
     {
-        private CancellationTokenSource _cts;
-        private List<Task> _taskList = new List<Task>();
-        private DataPool _datapool = new DataPool();
-        private Log _log = new Log();
-        private Save _save = new Save();
-        private ProxyPool _proxylist = new ProxyPool();
-        private Stopwatch _stopwatch = new Stopwatch();
-        private IWordList _wordlist = null;
-        private RunnerStatus _runnerStatus;
-        private bool _theEnd = false;
-        private bool _run = false;
-        private int _position = 0;
-        private int _bot = 0;
+        #region Fields (private)
 
-        public event EventHandler<StartEventArgs> OnStarted;
-        public event EventHandler<StopEventArgs> OnStopped;
-        public event EventHandler<EventArgs> OnCompleted;
-        public event ResolveConfig OnConfig;
-        public event EventHandler<ExceptionEventArgs> OnException;
+        private List<Task> _taskList;
+
+        #endregion
+
+        #region Fields (protected)
+
+        protected CancellationTokenSource _cts;
+        protected DataPool _datapool;
+        protected Log _log;
+        protected Save _save;
+        protected ProxyPool _proxylist;
+        protected Stopwatch _stopwatch;
+        protected IWordList _wordlist;
+        protected RunnerStatus _runnerStatus;
+        protected bool _theEnd;
+        protected bool _run;
+        protected int _position;
+        protected int _bot;
+
+        #endregion
+
+        #region Properties (public)
 
         public bool IsRunning { get { return RunnerStatus == RunnerStatus.Started; } }
         public bool IsCompleted { get { return RunnerStatus == RunnerStatus.Completed; } }
@@ -50,7 +50,7 @@ namespace MVThread
             }
         }
         public int CPM { get { return _datapool.CPM; } }
-        public int Active { get { return _taskList.Where(t => !t.IsCompleted).ToList().Count; } }
+        public virtual int Active { get { return _taskList.Where(t => !t.IsCompleted).ToList().Count; } }
         public string Elapsed
         {
             get
@@ -60,10 +60,39 @@ namespace MVThread
             }
         }
 
+        #endregion
+
+        #region Events (public)
+
+        public virtual event EventHandler<StartEventArgs> OnStarted;
+        public virtual event EventHandler<StopEventArgs> OnStopped;
+        public virtual event EventHandler<EventArgs> OnCompleted;
+        public virtual event Config OnConfig;
+        public virtual event EventHandler<ExceptionEventArgs> OnException;
+
+        #endregion
+
+        #region Constractor
+
         public TaskRunner()
         {
+            _taskList = new List<Task>();
+            _datapool = new DataPool();
+            _log = new Log();
+            _save = new Save();
+            _proxylist = new ProxyPool();
+            _stopwatch = new Stopwatch();
+            _wordlist = null;
             _runnerStatus = RunnerStatus.Idle;
+            _theEnd = false;
+            _run = false;
+            _position = 0;
+            _bot = 0;
         }
+
+        #endregion
+
+        #region Methods (public)
 
         public void SetWordlist(IEnumerable<string> combolist, int position = 0)
         {
@@ -113,13 +142,24 @@ namespace MVThread
             _proxylist.SetProxylist(list, join);
         }
 
-        public void SetProxylist(string url, ProxyType type, bool join = false)
+        public IEnumerable<string> GetProxylist(string address)
         {
-            if (Regex.IsMatch(url, @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?"))
+            if (System.IO.File.Exists(address))
             {
                 try
                 {
-                    string input = webrequest(url);
+                    return System.IO.File.ReadAllLines(address);
+                }
+                catch
+                {
+                    throw new Exception("Cannot access your file.");
+                }
+            }
+            if (Regex.IsMatch(address, @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?"))
+            {
+                try
+                {
+                    string input = HttpWebRequest(address);
                     MatchCollection mc = new Regex("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\:[0-9]{1,5}\\b").Matches(input);
                     List<string> proxylist = new List<string>();
                     foreach (object prx in mc)
@@ -127,18 +167,7 @@ namespace MVThread
                         Match match = (Match)prx;
                         proxylist.Add(match.ToString());
                     }
-
-                    List<Proxy> list = new List<Proxy>();
-                    foreach (var item in proxylist)
-                    {
-                        Proxy proxy = new Proxy()
-                        {
-                            Address = item,
-                            Type = type
-                        };
-                        list.Add(proxy);
-                    }
-                    _proxylist.SetProxylist(list, join);
+                    return proxylist;
                 }
                 catch
                 {
@@ -149,7 +178,7 @@ namespace MVThread
                 throw new Exception("The URL format is incorrect.");
         }
 
-        public void Start(int bot)
+        public virtual void Start(int bot)
         {
             if (!_run)
             {
@@ -196,6 +225,9 @@ namespace MVThread
             }
         }
 
+        #endregion
+
+        #region Methods (private)
 
         private void Config(CancellationToken ct)
         {
@@ -291,7 +323,7 @@ namespace MVThread
             }
         }
 
-        private string webrequest(string url)
+        private string HttpWebRequest(string url)
         {
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
@@ -318,5 +350,7 @@ namespace MVThread
                 }
             }
         }
+
+        #endregion
     }
 }

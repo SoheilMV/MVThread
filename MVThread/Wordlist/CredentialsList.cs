@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace MVThread.Wordlist
+namespace MVThread
 {
-    internal class CredentialsList : IWordList
+    public class CredentialsList : IWordList
     {
         private readonly object _obj = new object();
         private ComboType _type;

@@ -1,154 +1,58 @@
-﻿using MVThread.Datas;
-using MVThread.Events;
-using MVThread.File;
-using MVThread.Proxylist;
-using MVThread.Wordlist;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+﻿using System;
 using System.Linq;
-using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading;
+using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace MVThread
 {
-    public class ThreadRunner : IRunner
+    public class ThreadRunner : TaskRunner
     {
-        private CancellationTokenSource _cts;
-        private List<Thread> _threadList = new List<Thread>();
-        private DataPool _datapool = new DataPool();
-        private Log _log = new Log();
-        private Save _save = new Save();
-        private ProxyPool _proxylist = new ProxyPool();
-        private Stopwatch _stopwatch = new Stopwatch();
-        private IWordList _wordlist = null;
-        private RunnerStatus _runnerStatus;
-        private bool _theEnd = false;
-        private bool _run = false;
-        private int _position = 0;
-        private int _bot = 0;
+        #region Fields (private)
 
-        public event EventHandler<StartEventArgs> OnStarted;
-        public event EventHandler<StopEventArgs> OnStopped;
-        public event EventHandler<EventArgs> OnCompleted;
-        public event ResolveConfig OnConfig;
-        public event EventHandler<ExceptionEventArgs> OnException;
+        private List<Thread> _threadList;
 
-        public bool IsRunning { get { return RunnerStatus == RunnerStatus.Started; } }
-        public bool IsCompleted { get { return RunnerStatus == RunnerStatus.Completed; } }
-        public RunnerStatus RunnerStatus { get { return _runnerStatus; } }
-        public IProxyPool ProxyPool { get { return _proxylist; } }
-        public string LogAddress { get { return _log.Address; } set { _log.Address = value; } }
-        public Progress Progress
-        {
-            get
-            {
-                return _wordlist == null ? new Progress(0, 0) : new Progress(_wordlist.Count, _wordlist.Position);
-            }
-        }
-        public int CPM { get { return _datapool.CPM; } }
-        public int Active { get { return _threadList.Where(t => t != null).ToList().Count; } }
-        public string Elapsed
-        {
-            get
-            {
-                TimeSpan ts = TimeSpan.FromMilliseconds(_stopwatch.ElapsedMilliseconds);
-                return string.Format("{0:00}:{1:00}:{2:00}:{3:00}", ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
-            }
-        }
+        #endregion
+
+        #region Properties (public)
+
+        public override int Active { get { return _threadList.Where(t => t != null).ToList().Count; } }
+
+        #endregion
+
+        #region Events (public)
+
+        public override event EventHandler<StartEventArgs> OnStarted;
+        public override event EventHandler<StopEventArgs> OnStopped;
+        public override event EventHandler<EventArgs> OnCompleted;
+        public override event Config OnConfig;
+        public override event EventHandler<ExceptionEventArgs> OnException;
+
+        #endregion
+
+        #region Constractor
 
         public ThreadRunner()
         {
+            _threadList = new List<Thread>();
+            _datapool = new DataPool();
+            _log = new Log();
+            _save = new Save();
+            _proxylist = new ProxyPool();
+            _stopwatch = new Stopwatch();
+            _wordlist = null;
             _runnerStatus = RunnerStatus.Idle;
+            _theEnd = false;
+            _run = false;
+            _position = 0;
+            _bot = 0;
         }
 
-        public void SetWordlist(IEnumerable<string> combolist, int position = 0)
-        {
-            if(combolist == null)
-                throw new ArgumentNullException("Wordlist is null.");
-            if (combolist.Count() == 0)
-                throw new ArgumentNullException("Wordlist is null.");
-            if (position < 0 || position > combolist.Count() - 1)
-                throw new ArgumentNullException($"Position 0-{combolist.Count() - 1}");
+        #endregion
 
-            _position = position;
-            _wordlist = new ComboList(combolist, position);
-        }
+        #region Methods (public)
 
-        public void SetWordlist(IEnumerable<string> userlist, IEnumerable<string> passlist, ComboType type, int position = 0)
-        {
-            if (userlist == null || passlist == null)
-                throw new ArgumentNullException("Wordlist is null.");
-            if (userlist.Count() == 0)
-                throw new ArgumentNullException("Wordlist is null.");
-            if (passlist.Count() == 0)
-                throw new ArgumentNullException("Wordlist is null.");
-            if (position < 0 || position > (userlist.Count() * passlist.Count()) - 1)
-                throw new ArgumentNullException($"Position 0-{(userlist.Count() * passlist.Count()) - 1}");
-
-            _position = position;
-            _wordlist = new CredentialsList(userlist, passlist, type, position);
-        }
-
-        public void SetProxylist(IEnumerable<string> proxylist, ProxyType type, bool join = false)
-        {
-            if (proxylist == null)
-                throw new ArgumentNullException("Proxylist is null.");
-            if (proxylist.Count() == 0)
-                throw new ArgumentNullException("Proxylist is null.");
-
-            List<Proxy> list = new List<Proxy>();
-            foreach (var item in proxylist)
-            {
-                Proxy proxy = new Proxy()
-                {
-                    Address = item,
-                    Type = type
-                };
-                list.Add(proxy);
-            }
-            _proxylist.SetProxylist(list, join);
-        }
-
-        public void SetProxylist(string url, ProxyType type, bool join = false)
-        {
-            if (Regex.IsMatch(url, @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?"))
-            {
-                try
-                {
-                    string input = webrequest(url);
-                    MatchCollection mc = new Regex("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\:[0-9]{1,5}\\b").Matches(input);
-                    List<string> proxylist = new List<string>();
-                    foreach (object prx in mc)
-                    {
-                        Match match = (Match)prx;
-                        proxylist.Add(match.ToString());
-                    }
-
-                    List<Proxy> list = new List<Proxy>();
-                    foreach (var item in proxylist)
-                    {
-                        Proxy proxy = new Proxy()
-                        {
-                            Address = item,
-                            Type = type
-                        };
-                        list.Add(proxy);
-                    }
-                    _proxylist.SetProxylist(list, join);
-                }
-                catch
-                {
-                    throw new Exception("Please enter valid proxy link and try.");
-                }
-            }
-            else
-                throw new Exception("The URL format is incorrect.");
-        }
-
-        public void Start(int bot)
+        public override void Start(int bot)
         {
             if (!_run)
             {
@@ -188,15 +92,9 @@ namespace MVThread
             }
         }
 
-        public void Stop()
-        {
-            if (_run)
-            {
-                _runnerStatus = RunnerStatus.Stopped;
-                _cts.Cancel();
-            }
-        }
+        #endregion
 
+        #region Methods (private)
 
         private void Config(int num, CancellationToken ct)
         {
@@ -294,32 +192,6 @@ namespace MVThread
             }
         }
 
-        private string webrequest(string url)
-        {
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
-            ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => true;
-            try
-            {
-                var req = WebRequest.Create(url);
-                using (var res = (HttpWebResponse)req.GetResponse())
-                {
-                    using (var sr = new StreamReader(res.GetResponseStream()))
-                    {
-                        return sr.ReadToEnd();
-                    }
-                }
-            }
-            catch (WebException ex)
-            {
-                using (var res = (HttpWebResponse)ex.Response)
-                {
-                    using (var sr = new StreamReader(res.GetResponseStream()))
-                    {
-                        return sr.ReadToEnd();
-                    }
-                }
-            }
-        }
+        #endregion
     }
 }

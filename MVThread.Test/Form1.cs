@@ -1,6 +1,4 @@
-﻿using MVThread.Events;
-using MVThread.Wordlist;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
@@ -53,40 +51,30 @@ namespace MVThread.Test
 
         private void timer_Tick(object sender, EventArgs e)
         {
-            this.Text = $"Test2 - {_runner.CPM} - {_runner.ProxyPool.Count}";
-            lblChecked.Text = $"Checked : {_runner.Progress.Value}";
+            this.Text = $"Test2 - CPM : {_runner.CPM}";
+            lblChecked.Text = $"Checked : {_runner.Progress.Value}/{_runner.Progress.MaxValue}";
             pbChecked.Value = _runner.Progress.Value; //set progress bar value
-            if (_runner.Progress.MaxValue > 0)
-                lblPercentage.Text = $"{(int)Math.Round((double)(_runner.Progress.Value * 100) / (double)(_runner.Progress.MaxValue))}%"; //show progress percentage
+            lblPercentage.Text = $"{_runner.Progress.Percentage}%"; //show progress percentage
         }
 
         private void Runner_OnStarted(object sender, EventArgs e)
         {
-            listData.Items.Add("Started!"); //displays the start message when the runner start
+            AddToListData("Started!"); //displays the start message when the runner start
         }
 
         private void Runner_OnStopped(object sender, StopEventArgs e)
         {
-            Invoke(new MethodInvoker(delegate()
-            {
-                listData.Items.Add("Stoped!"); //displays the stop message when the runner stop
-            }));
+            AddToListData("Stoped!"); //displays the stop message when the runner stop
         }
 
         private void Runner_OnCompeleted(object sender, EventArgs e)
         {
-            Invoke(new MethodInvoker(delegate()
-            {
-                listData.Items.Add("Completed!"); //displays the completed message when the runner complete
-            }));
+            AddToListData("Completed!"); //displays the completed message when the runner complete
         }
 
         private Status Runner_OnConfig(object sender, DataEventArgs e)
         {
-            Invoke(new MethodInvoker(delegate()
-            {
-                listData.Items.Add(e.Data); //add data to listbox
-            }));
+            AddToListData(e.Data); //add data to listbox
 
             e.Save.WriteLine("Data.txt", e.Data); //save data
 
@@ -96,6 +84,14 @@ namespace MVThread.Test
         private void Runner_OnException(object sender, ExceptionEventArgs e)
         {
             e.Log.WriteLine($"{e.Location}: {e.Exception.Message}"); //any error in events will show you
+        }
+
+        private void AddToListData(string item)
+        {
+            Invoke(new MethodInvoker(delegate()
+            {
+                listData.Items.Add(item);
+            }));
         }
 
         private void Reset()

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace MVThread.Wordlist
+namespace MVThread
 {
-    internal class ComboList : IWordList
+    public class ComboList : IWordList
     {
         private readonly object _obj = new object();
         private List<IEnumerable<string>> _list;

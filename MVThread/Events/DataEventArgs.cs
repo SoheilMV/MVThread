@@ -1,12 +1,6 @@
-﻿using MVThread.File;
-using MVThread.Proxylist;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
-namespace MVThread.Events
+namespace MVThread
 {
     public sealed class DataEventArgs : EventArgs
     {

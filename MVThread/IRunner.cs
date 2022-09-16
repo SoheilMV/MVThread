@@ -1,7 +1,4 @@
-﻿using MVThread.Events;
-using MVThread.Proxylist;
-using MVThread.Wordlist;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace MVThread
@@ -11,7 +8,7 @@ namespace MVThread
         event EventHandler<StartEventArgs> OnStarted;
         event EventHandler<StopEventArgs> OnStopped;
         event EventHandler<EventArgs> OnCompleted;
-        event ResolveConfig OnConfig;
+        event Config OnConfig;
         event EventHandler<ExceptionEventArgs> OnException;
         bool IsRunning { get; }
         bool IsCompleted { get; }
@@ -25,7 +22,7 @@ namespace MVThread
         void SetWordlist(IEnumerable<string> combolist, int position = 0);
         void SetWordlist(IEnumerable<string> userlist, IEnumerable<string> passlist, ComboType type, int position = 0);
         void SetProxylist(IEnumerable<string> proxylist, ProxyType type, bool join = false);
-        void SetProxylist(string url, ProxyType type, bool join = false);
+        IEnumerable<string> GetProxylist(string address);
         void Start(int bot);
         void Stop();
     }

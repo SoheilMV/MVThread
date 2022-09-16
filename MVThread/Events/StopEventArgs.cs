@@ -1,8 +1,6 @@
-﻿using MVThread.File;
-using MVThread.Wordlist;
-using System;
+﻿using System;
 
-namespace MVThread.Events
+namespace MVThread
 {
     public sealed class StopEventArgs : EventArgs
     {

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MVThread
 {
@@ -16,5 +12,12 @@ namespace MVThread
 
         public int MaxValue { get; private set; }
         public int Value { get; private set; }
+        public double Percentage
+        {
+            get
+            {
+                return MaxValue > 0 ? Math.Round((double)((Value * 100) / MaxValue)) : 0;
+            }
+        }
     }
 }

@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace MVThread.File
+namespace MVThread
 {
-    internal class Log : ILog
+    public class Log : ILog
     {
         private readonly object _obj = new object();
         public string Address { get; set; } = Environment.CurrentDirectory + "\\Log.txt";

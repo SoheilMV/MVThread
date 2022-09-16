@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace MVThread.Datas
+namespace MVThread
 {
-    internal class DataPool
+    public class DataPool
     {
         private List<int> _datas = new List<int>();
 
-        /// <summary>The checks per minute.</summary>
+        /// <summary>
+        /// The checks per minute.
+        /// </summary>
         public int CPM { get; private set; }
 
         public DataPool()

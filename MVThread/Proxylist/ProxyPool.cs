@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace MVThread.Proxylist
+namespace MVThread
 {
-    internal class ProxyPool : IProxyPool
+    public class ProxyPool : IProxyPool
     {
         private Random _random = new Random(Guid.NewGuid().GetHashCode());
 
