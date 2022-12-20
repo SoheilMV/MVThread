@@ -9,6 +9,7 @@ namespace MVThread
         event EventHandler<StopEventArgs> OnStopped;
         event EventHandler<EventArgs> OnCompleted;
         event Config OnConfig;
+        event ConfigAsync OnConfigAsync;
         event EventHandler<ExceptionEventArgs> OnException;
         bool IsRunning { get; }
         bool IsCompleted { get; }
@@ -18,6 +19,7 @@ namespace MVThread
         int CPM { get; }
         int Active { get; }
         string Elapsed { get; }
+        bool UseAsync { get; set; }
         string LogAddress { get; set; }
         void SetWordlist(IEnumerable<string> combolist, int position = 0);
         void SetWordlist(IEnumerable<string> userlist, IEnumerable<string> passlist, ComboType type, int position = 0);

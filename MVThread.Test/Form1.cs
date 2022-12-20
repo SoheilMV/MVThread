@@ -22,6 +22,7 @@ namespace MVThread.Test
             _runner.OnStopped += Runner_OnStopped;
             _runner.OnCompleted += Runner_OnCompeleted;
             _runner.OnConfig += Runner_OnConfig;
+            _runner.OnConfigAsync += _runner_OnConfigAsync;
             _runner.OnException += Runner_OnException;
         }
 
@@ -73,6 +74,15 @@ namespace MVThread.Test
         }
 
         private Status Runner_OnConfig(object sender, DataEventArgs e)
+        {
+            AddToListData(e.Data); //add data to listbox
+
+            e.Save.WriteLine("Data.txt", e.Data); //save data
+
+            return Status.OK;
+        }
+
+        private async System.Threading.Tasks.Task<Status> _runner_OnConfigAsync(object sender, DataEventArgs e)
         {
             AddToListData(e.Data); //add data to listbox
 

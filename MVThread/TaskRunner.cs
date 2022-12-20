@@ -32,6 +32,7 @@ namespace MVThread
         protected bool _run;
         protected int _position;
         protected int _bot;
+        protected bool _useAsync = false;
 
         #endregion
 
@@ -59,6 +60,7 @@ namespace MVThread
                 return string.Format("{0:00}:{1:00}:{2:00}:{3:00}", ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
             }
         }
+        public bool UseAsync { get { return _useAsync; } set { _useAsync = value; } }
 
         #endregion
 
@@ -68,13 +70,14 @@ namespace MVThread
         public virtual event EventHandler<StopEventArgs> OnStopped;
         public virtual event EventHandler<EventArgs> OnCompleted;
         public virtual event Config OnConfig;
+        public virtual event ConfigAsync OnConfigAsync;
         public virtual event EventHandler<ExceptionEventArgs> OnException;
 
         #endregion
 
         #region Constractor
 
-        public TaskRunner()
+        public TaskRunner(bool useAsync = true)
         {
             _taskList = new List<Task>();
             _datapool = new DataPool();
@@ -88,6 +91,7 @@ namespace MVThread
             _run = false;
             _position = 0;
             _bot = 0;
+            _useAsync = useAsync;
         }
 
         #endregion
@@ -130,14 +134,13 @@ namespace MVThread
                 throw new ArgumentNullException("Proxylist is null.");
 
             List<Proxy> list = new List<Proxy>();
-            foreach (var item in proxylist)
+            foreach (var address in proxylist)
             {
-                Proxy proxy = new Proxy()
+                if (Regex.IsMatch(address, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\:[0-9]{1,5}\\b"))
                 {
-                    Address = item,
-                    Type = type
-                };
-                list.Add(proxy);
+                    Proxy proxy = new Proxy(type, address);
+                    list.Add(proxy);
+                }
             }
             _proxylist.SetProxylist(list, join);
         }
@@ -155,7 +158,7 @@ namespace MVThread
                     throw new Exception("Cannot access your file.");
                 }
             }
-            if (Regex.IsMatch(address, @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?"))
+            else if (Regex.IsMatch(address, @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?"))
             {
                 try
                 {
@@ -175,7 +178,7 @@ namespace MVThread
                 }
             }
             else
-                throw new Exception("The URL format is incorrect.");
+                throw new Exception("The address format is incorrect.");
         }
 
         public virtual void Start(int bot)
@@ -186,6 +189,10 @@ namespace MVThread
                     throw new Exception("Wordlist is null.");
                 if (!_wordlist.HasNext)
                     throw new Exception("Wordlist is null.");
+                if (UseAsync && OnConfigAsync == null)
+                    throw new Exception("OnConfigAsync event cannot be null.");
+                if (!UseAsync && OnConfig == null)
+                    throw new Exception("OnConfig event cannot be null.");
 
                 _theEnd = false;
                 _run = true;
@@ -208,7 +215,7 @@ namespace MVThread
 
                 for (int i = 0; i < _bot; i++)
                 {
-                    Task task = Task.Factory.StartNew(() => { Config(_cts.Token); }, _cts.Token);
+                    Task task = Task.Factory.StartNew(async () => { await Config(_cts.Token); }, _cts.Token);
                     _taskList.Add(task);
                 }
 
@@ -229,7 +236,7 @@ namespace MVThread
 
         #region Methods (private)
 
-        private void Config(CancellationToken ct)
+        private async Task Config(CancellationToken ct)
         {
             while (_wordlist.HasNext && !_theEnd)
             {
@@ -254,14 +261,30 @@ namespace MVThread
                     }
 
                     Status? status = Status.OK;
-                    status = OnConfig?.Invoke(this, new DataEventArgs()
+                    if (_useAsync)
                     {
-                        Retry = retry,
-                        Data = data,
-                        Proxy = proxy,
-                        Save = _save,
-                        Log = _log
-                    });
+                        status = await OnConfigAsync?.Invoke(this, new DataEventArgs()
+                        {
+                            Retry = retry,
+                            Data = data,
+                            IsProxyLess = _proxylist.Less,
+                            Proxy = proxy,
+                            Save = _save,
+                            Log = _log
+                        });
+                    }
+                    else
+                    {
+                        status = OnConfig?.Invoke(this, new DataEventArgs()
+                        {
+                            Retry = retry,
+                            Data = data,
+                            IsProxyLess = _proxylist.Less,
+                            Proxy = proxy,
+                            Save = _save,
+                            Log = _log
+                        });
+                    }
 
                     switch (status)
                     {
@@ -326,7 +349,7 @@ namespace MVThread
         private string HttpWebRequest(string url)
         {
             ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Ssl3;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => true;
             try
             {

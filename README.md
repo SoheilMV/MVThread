@@ -16,59 +16,68 @@ Multi Threading for .NET Framework 4.5+ / .NET Standard 2.0
 - Stop
 - Complete
 - Config
+- ConfigAsync
 - Exception
 
 #### Using
 ```csharp
-private static List<string> list = new List<string>();
-
 static void Main(string[] args)
 {
-	for (int i = 1; i <= 1000; i++) //Adds 1-1000 to the list
-	{
-		list.Add(i.ToString());
-	}
+    List<string> list = new List<string>();
+    for (int i = 1; i <= 1000; i++) //Adds 1-1000 to the list
+    {
+        list.Add(i.ToString());
+    }
+    
+    IRunner runner = new TaskRunner();
+    runner.OnStarted += Run_OnStarted;
+    runner.OnStopped += Run_OnStopped;
+    runner.OnCompleted += Run_OnCompleted;
+    runner.OnConfig += Run_OnConfig;
+    runner.OnConfigAsync += Run_OnConfigAsync;
 
-	IRunner runner = new TaskRunner();
-	runner.OnStarted += Run_OnStarted;
-	runner.OnStopped += Run_OnStopped;
-	runner.OnCompleted += Run_OnCompleted;
-	runner.OnConfig += Run_OnConfig;
-	
-	runner.SetWordlist(list); //Add list to runner
-	runner.Start(2); //Add bot count in runner and start the runner
-	
-	while (runner.IsRunning)
-    	{
-        	Console.Title = $"Bot : {runner.Active} - CPM : {runner.CPM} - Elapsed : {runner.Elapsed} ";
-        	Thread.Sleep(100);
-    	}
-	
-	Console.ReadKey();
+    runner.SetWordlist(list); //Add list to runner
+    runner.Start(2); //Add bot count in runner and start the runner
+    
+    while (runner.IsRunning)
+    {
+        Console.Title = $"Bot : {runner.Active} - CPM : {runner.CPM} - Elapsed : {runner.Elapsed} ";
+        Thread.Sleep(100);
+    }
+
+    Console.ReadKey();
 }
 
 private static void Run_OnStarted(object sender, EventArgs e)
 {
-	Console.ForegroundColor = ConsoleColor.Green;
-	Console.WriteLine("Started!"); //Displays the start message when the runner start
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine("Started!"); //Displays the start message when the runner start
 }
 
 private static void Run_OnStopped(object sender, StopEventArgs e)
 {
-	Console.ForegroundColor = ConsoleColor.Red;
-	Console.WriteLine("Stopped!"); //Displays the stop message when the runner stop
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine("Stopped!"); //Displays the stop message when the runner stop
 }
 
 private static void Run_OnCompleted(object sender, EventArgs e)
 {
-	Console.ForegroundColor = ConsoleColor.Yellow;
-	Console.WriteLine("Completed!"); //Displays the completed message when the runner complete
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine("Completed!"); //Displays the completed message when the runner complete
 }
 
-private static void Run_OnConfig(object sender, DataEventArgs e)
+private static Status Run_OnConfig(object sender, DataEventArgs e)
 {
-	Console.ForegroundColor = ConsoleColor.White;
-	Console.WriteLine(e.Data); //Display the value received from the list
+    Console.ForegroundColor = ConsoleColor.White;
+    Console.WriteLine(e.Data); //Display the value received from the list
+    return Status.OK;
+}
+
+private static async Task<Status> Run_OnConfigAsync(object sender, DataEventArgs e)
+{
+    Console.ForegroundColor = ConsoleColor.White;
+    Console.WriteLine(e.Data); //Display the value received from the list
+    return Status.OK;
 }
 ```
 
@@ -105,35 +114,41 @@ runner.SetProxylist(proxies, type);
 //or
 
 string url = "https://localhost/proxies/";
-runner.SetProxylist(url, type);
+var proxies = _runner.GetProxylist(url);
+runner.SetProxylist(proxies, type);
+
+//or
+
+string path = "C:\\Proxylist.txt";
+var proxies = _runner.GetProxylist(path);
+runner.SetProxylist(proxies, type);
 ```
 
 #### Overview of the configuration event
 ```csharp
 private static void Run_OnConfig(object sender, DataEventArgs e)
 {
-	string data = e.Data; //Get data from the entered list
-	
-	if(e.Retry > 100) //Shows the current data retrieval count
-		return Status.TheEnd; //In certain circumstances, you can stop all the threads if you wish
-		
-	if (e.Proxy != null) //Get a proxy at random
-    	{
-        	string address = e.Proxy.Address;
-        	ProxyType type = e.Proxy.Type;
-    	}
-
-	try
-	{
-		if(requset.StatusCode == 200)
-			e.Save.WriteLine("goods.txt", data); //Save data in a file
-		
-		return Status.OK; //To get the continuation of the list return Status.OK
-	}
-	catch (Exception ex)
-	{
-		e.Log.WriteLine(ex.Message); //You can save your messages as a log
-		return Status.Retry; //If the operation fails, you can retrieve the current data
-	}
+    string data = e.Data; //Get data from the entered list
+    
+    if(e.Retry > 100) //Shows the current data retrieval count
+        return Status.TheEnd; //In certain circumstances, you can stop all the threads if you wish
+        
+    if (!e.IsProxyLess) //Get a proxy at random
+    {
+        Uri address = e.Proxy.Address;
+        ICredentials credentials = e.Proxy.NetworkCredential;
+        ProxyType proxyType = e.Proxy.GetProxyType();
+    }
+    
+    try
+    {
+        e.Save.WriteLine("goods.txt", data); //Save data in a file
+        return Status.OK; //To get the continuation of the list return Status.OK
+    }
+    catch (Exception ex)
+    {
+        e.Log.WriteLine(ex.Message); //You can save your messages as a log
+        return Status.Retry; //If the operation fails, you can retrieve the current data
+    }
 }
 ```

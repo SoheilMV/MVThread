@@ -5,8 +5,6 @@ namespace MVThread
 {
     public class ProxyPool : IProxyPool
     {
-        private Random _random = new Random(Guid.NewGuid().GetHashCode());
-
         public List<Proxy> Proxies { get; private set; }
         public int Count { get { return Proxies.Count; } }
         public bool Less { get { return Proxies.Count == 0; } }
@@ -29,7 +27,7 @@ namespace MVThread
         {
             if (!Less)
             {
-                int num = _random.Next(Count);
+                int num = new Random(Environment.TickCount).Next(Count);
                 return Proxies[num];
             }
             else

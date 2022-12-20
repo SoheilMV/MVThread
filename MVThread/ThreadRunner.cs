@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace MVThread
@@ -26,13 +27,14 @@ namespace MVThread
         public override event EventHandler<StopEventArgs> OnStopped;
         public override event EventHandler<EventArgs> OnCompleted;
         public override event Config OnConfig;
+        public override event ConfigAsync OnConfigAsync;
         public override event EventHandler<ExceptionEventArgs> OnException;
 
         #endregion
 
         #region Constractor
 
-        public ThreadRunner()
+        public ThreadRunner(bool useAsync = true)
         {
             _threadList = new List<Thread>();
             _datapool = new DataPool();
@@ -46,6 +48,7 @@ namespace MVThread
             _run = false;
             _position = 0;
             _bot = 0;
+            _useAsync = useAsync;
         }
 
         #endregion
@@ -60,6 +63,10 @@ namespace MVThread
                     throw new Exception("Wordlist is null.");
                 if (!_wordlist.HasNext)
                     throw new Exception("Wordlist is null.");
+                if(UseAsync && OnConfigAsync == null)
+                    throw new Exception("OnConfigAsync event cannot be null.");
+                if (!UseAsync && OnConfig == null)
+                    throw new Exception("OnConfig event cannot be null.");
 
                 _theEnd = false;
                 _run = true;
@@ -83,7 +90,7 @@ namespace MVThread
                 for (int i = 0; i < _bot; i++)
                 {
                     int num = i;
-                    Thread thread = new Thread(() => { Config(num, _cts.Token); }) { IsBackground = true, Name = $"ID{num}" };
+                    Thread thread = new Thread(async () => { await Config(num, _cts.Token); }) { IsBackground = true, Name = $"ID{num}" };
                     thread.Start();
                     _threadList.Add(thread);
                 }
@@ -96,7 +103,7 @@ namespace MVThread
 
         #region Methods (private)
 
-        private void Config(int num, CancellationToken ct)
+        private async Task Config(int num, CancellationToken ct)
         {
             while (_wordlist.HasNext && !_theEnd)
             {
@@ -121,14 +128,30 @@ namespace MVThread
                     }
 
                     Status? status = Status.OK;
-                    status = OnConfig?.Invoke(this, new DataEventArgs()
+                    if (_useAsync)
                     {
-                        Retry = retry,
-                        Data = data,
-                        Proxy = proxy,
-                        Save = _save,
-                        Log = _log
-                    });
+                        status = await OnConfigAsync?.Invoke(this, new DataEventArgs()
+                        {
+                            Retry = retry,
+                            Data = data,
+                            IsProxyLess = _proxylist.Less,
+                            Proxy = proxy,
+                            Save = _save,
+                            Log = _log
+                        });
+                    }
+                    else
+                    {
+                        status = OnConfig?.Invoke(this, new DataEventArgs()
+                        {
+                            Retry = retry,
+                            Data = data,
+                            IsProxyLess = _proxylist.Less,
+                            Proxy = proxy,
+                            Save = _save,
+                            Log = _log
+                        });
+                    }
 
                     switch (status)
                     {
