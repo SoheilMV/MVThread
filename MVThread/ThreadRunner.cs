@@ -90,7 +90,7 @@ namespace MVThread
                 for (int i = 0; i < _bot; i++)
                 {
                     int num = i;
-                    Thread thread = new Thread(async () => { await Config(num, _cts.Token); }) { IsBackground = true, Name = $"ID{num}" };
+                    Thread thread = new Thread(() => { Config(num, _cts.Token); }) { IsBackground = true, Name = $"ID{num}" };
                     thread.Start();
                     _threadList.Add(thread);
                 }
@@ -103,7 +103,7 @@ namespace MVThread
 
         #region Methods (private)
 
-        private async Task Config(int num, CancellationToken ct)
+        private void Config(int num, CancellationToken ct)
         {
             while (_wordlist.HasNext && !_theEnd)
             {
@@ -130,7 +130,7 @@ namespace MVThread
                     Status? status = Status.OK;
                     if (_useAsync)
                     {
-                        status = await OnConfigAsync?.Invoke(this, new DataEventArgs()
+                        status = OnConfigAsync?.Invoke(this, new DataEventArgs()
                         {
                             Retry = retry,
                             Data = data,
@@ -138,7 +138,7 @@ namespace MVThread
                             Proxy = proxy,
                             Save = _save,
                             Log = _log
-                        });
+                        }).Result;
                     }
                     else
                     {

@@ -215,7 +215,7 @@ namespace MVThread
 
                 for (int i = 0; i < _bot; i++)
                 {
-                    Task task = Task.Factory.StartNew(async () => { await Config(_cts.Token); }, _cts.Token);
+                    Task task = Task.Factory.StartNew(() => { Config(_cts.Token); }, _cts.Token);
                     _taskList.Add(task);
                 }
 
@@ -236,7 +236,7 @@ namespace MVThread
 
         #region Methods (private)
 
-        private async Task Config(CancellationToken ct)
+        private void Config(CancellationToken ct)
         {
             while (_wordlist.HasNext && !_theEnd)
             {
@@ -263,7 +263,7 @@ namespace MVThread
                     Status? status = Status.OK;
                     if (_useAsync)
                     {
-                        status = await OnConfigAsync?.Invoke(this, new DataEventArgs()
+                        status = OnConfigAsync?.Invoke(this, new DataEventArgs()
                         {
                             Retry = retry,
                             Data = data,
@@ -271,7 +271,7 @@ namespace MVThread
                             Proxy = proxy,
                             Save = _save,
                             Log = _log
-                        });
+                        }).Result;
                     }
                     else
                     {
