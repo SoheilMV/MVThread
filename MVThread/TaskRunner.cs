@@ -251,7 +251,7 @@ namespace MVThread
                 try
                 {
                     Proxy proxy = null;
-                    if (!_proxylist.Less)
+                    if (!_proxylist.IsEmpty)
                     {
                         proxy = _proxylist.Get();
                         if (proxy == null)
@@ -267,7 +267,7 @@ namespace MVThread
                         {
                             Retry = retry,
                             Data = data,
-                            IsProxyLess = _proxylist.Less,
+                            IsProxyLess = _proxylist.IsEmpty,
                             Proxy = proxy,
                             Save = _save,
                             Log = _log
@@ -279,7 +279,7 @@ namespace MVThread
                         {
                             Retry = retry,
                             Data = data,
-                            IsProxyLess = _proxylist.Less,
+                            IsProxyLess = _proxylist.IsEmpty,
                             Proxy = proxy,
                             Save = _save,
                             Log = _log

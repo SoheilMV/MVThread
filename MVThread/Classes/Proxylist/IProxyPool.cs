@@ -6,7 +6,7 @@ namespace MVThread
     {
         List<Proxy> Proxies { get; }
         int Count { get; }
-        bool Less { get; }
+        bool IsEmpty { get; }
         void SetProxylist(List<Proxy> proxies, bool join);
         Proxy Get();
     }
