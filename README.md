@@ -133,11 +133,11 @@ private static void Run_OnConfig(object sender, DataEventArgs e)
     if(e.Retry > 100) //Shows the current data retrieval count
         return Status.TheEnd; //In certain circumstances, you can stop all the threads if you wish
         
-    if (!e.IsProxyLess) //Get a proxy at random
+    if (!e.ProxyDetail.IsProxyLess) //Get a proxy at random
     {
-        Uri address = e.Proxy.Address;
-        ICredentials credentials = e.Proxy.NetworkCredential;
-        ProxyType proxyType = e.Proxy.GetProxyType();
+        Uri address = e.ProxyDetail.Proxy.Address;
+        ICredentials credentials = e.ProxyDetail.Proxy.NetworkCredential;
+        ProxyType proxyType = e.ProxyDetail.Proxy.GetProxyType();
     }
     
     try

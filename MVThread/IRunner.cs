@@ -14,7 +14,7 @@ namespace MVThread
         bool IsRunning { get; }
         bool IsCompleted { get; }
         RunnerStatus RunnerStatus { get; }
-        IProxyPool ProxyPool { get; }
+        IProxyInfo ProxyInfo { get; }
         Progress Progress { get; }
         int CPM { get; }
         int Active { get; }

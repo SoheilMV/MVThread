@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 
 namespace MVThread
@@ -63,7 +62,7 @@ namespace MVThread
                     throw new Exception("Wordlist is null.");
                 if (!_wordlist.HasNext)
                     throw new Exception("Wordlist is null.");
-                if(UseAsync && OnConfigAsync == null)
+                if (UseAsync && OnConfigAsync == null)
                     throw new Exception("OnConfigAsync event cannot be null.");
                 if (!UseAsync && OnConfig == null)
                     throw new Exception("OnConfig event cannot be null.");
@@ -79,6 +78,10 @@ namespace MVThread
                     _bot = _wordlist.Count - _position;
                 }
 
+                bool proxyLocker = false;
+                if (!_proxylist.IsEmpty && _proxylist.Count < _bot * 2)
+                    proxyLocker = true;
+
                 _runnerStatus = RunnerStatus.Started;
                 try { OnStarted?.Invoke(this, new StartEventArgs() { Bot = _bot }); } catch (Exception ex) { OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnStarted", Exception = ex, Log = _log }); }
 
@@ -86,6 +89,8 @@ namespace MVThread
                 _stopwatch.Start();
 
                 _cts = new CancellationTokenSource();
+
+                _proxyManage = new ProxyManage(_proxylist, proxyLocker);
 
                 for (int i = 0; i < _bot; i++)
                 {
@@ -117,56 +122,47 @@ namespace MVThread
 
                 try
                 {
-                    Proxy proxy = null;
-                    if (!_proxylist.IsEmpty)
+                    using (ProxyDetail proxyDetail = _proxylist.IsEmpty ? new ProxyDetail() : new ProxyDetail(_proxyManage, ct))
                     {
-                        proxy = _proxylist.Get();
-                        if (proxy == null)
+                        Status? status = Status.OK;
+                        if (_useAsync)
                         {
-                            goto Retry;
+                            status = OnConfigAsync?.Invoke(this, new DataEventArgs()
+                            {
+                                Retry = retry,
+                                Data = data,
+                                ProxyDetail = proxyDetail,
+                                Save = _save,
+                                Log = _log
+                            }).Result;
                         }
-                    }
-
-                    Status? status = Status.OK;
-                    if (_useAsync)
-                    {
-                        status = OnConfigAsync?.Invoke(this, new DataEventArgs()
+                        else
                         {
-                            Retry = retry,
-                            Data = data,
-                            IsProxyLess = _proxylist.IsEmpty,
-                            Proxy = proxy,
-                            Save = _save,
-                            Log = _log
-                        }).Result;
-                    }
-                    else
-                    {
-                        status = OnConfig?.Invoke(this, new DataEventArgs()
-                        {
-                            Retry = retry,
-                            Data = data,
-                            IsProxyLess = _proxylist.IsEmpty,
-                            Proxy = proxy,
-                            Save = _save,
-                            Log = _log
-                        });
-                    }
+                            status = OnConfig?.Invoke(this, new DataEventArgs()
+                            {
+                                Retry = retry,
+                                Data = data,
+                                ProxyDetail = proxyDetail,
+                                Save = _save,
+                                Log = _log
+                            });
+                        }
 
-                    switch (status)
-                    {
-                        case Status.OK:
-                            _datapool.Add();
-                            break;
-                        case Status.Retry:
-                            retry++;
-                            goto Retry;
-                        case Status.TheEnd:
-                            _theEnd = true;
-                            break;
-                        default:
-                            _datapool.Add();
-                            break;
+                        switch (status)
+                        {
+                            case Status.OK:
+                                _datapool.Add();
+                                break;
+                            case Status.Retry:
+                                retry++;
+                                goto Retry;
+                            case Status.TheEnd:
+                                _theEnd = true;
+                                break;
+                            default:
+                                _datapool.Add();
+                                break;
+                        }
                     }
                 }
                 catch (Exception ex)
