@@ -39,7 +39,7 @@ namespace MVThread
             _datapool = new DataPool();
             _log = new Log();
             _save = new Save();
-            _proxylist = new ProxyPool();
+            _proxyManage = new ProxyManage();
             _stopwatch = new Stopwatch();
             _wordlist = null;
             _runnerStatus = RunnerStatus.Idle;
@@ -78,10 +78,6 @@ namespace MVThread
                     _bot = _wordlist.Count - _position;
                 }
 
-                bool proxyLocker = false;
-                if (!_proxylist.IsEmpty && _proxylist.Count < _bot * 2)
-                    proxyLocker = true;
-
                 _runnerStatus = RunnerStatus.Started;
                 try { OnStarted?.Invoke(this, new StartEventArgs() { Bot = _bot }); } catch (Exception ex) { OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnStarted", Exception = ex, Log = _log }); }
 
@@ -90,7 +86,10 @@ namespace MVThread
 
                 _cts = new CancellationTokenSource();
 
-                _proxyManage = new ProxyManage(_proxylist, proxyLocker);
+                if (!_proxyManage.IsEmpty && _proxyManage.Count < _bot * 2)
+                    _proxyManage.Freez = true;
+                else
+                    _proxyManage.Freez = false;
 
                 for (int i = 0; i < _bot; i++)
                 {
@@ -122,7 +121,7 @@ namespace MVThread
 
                 try
                 {
-                    using (ProxyDetail proxyDetail = _proxylist.IsEmpty ? new ProxyDetail() : new ProxyDetail(_proxyManage, ct))
+                    using (ProxyDetail proxyDetail = new ProxyDetail(_proxyManage, ct))
                     {
                         Status? status = Status.OK;
                         if (_useAsync)

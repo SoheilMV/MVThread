@@ -5,26 +5,18 @@ namespace MVThread
 {
     public class ProxyDetail : IDisposable
     {
-        private readonly object _obj = new object();
         private ProxyManage _proxyManage;
 
         public Proxy Proxy { get; private set; }
-        public int Goods => _proxyManage != null ? _proxyManage.GoodsCount : 0;
-        public int InUse => _proxyManage != null ? _proxyManage.InUse : 0;
-        public int Bads => _proxyManage != null ? _proxyManage.BadsCount : 0;
-        public int Bans => _proxyManage != null ? _proxyManage.BansCount : 0;
-        public int Count => _proxyManage != null ? _proxyManage.Count : 0;
-        public bool IsProxyless => _proxyManage != null ? _proxyManage.ProxyPool.IsEmpty : true;
-
-        public ProxyDetail()
-        {
-            _proxyManage = null;
-            Proxy = null;
-        }
+        public int Goods => _proxyManage.Goods;
+        public int InUse => _proxyManage.InUse;
+        public int Bads => _proxyManage.Bads;
+        public int Bans => _proxyManage.Bans;
+        public int Count => _proxyManage.Count;
+        public bool IsProxyless => _proxyManage.IsEmpty;
 
         public ProxyDetail(ProxyManage proxyManage, CancellationToken cancellationToken)
         {
-
             _proxyManage = proxyManage;
 
             Retry:
@@ -46,13 +38,13 @@ namespace MVThread
             }
         }
 
-        public void Bad()
+        public void AddToBad()
         {
             if (Proxy != null)
                 _proxyManage?.AddBad(Proxy);
         }
 
-        public void Ban()
+        public void AddToBan()
         {
             if (Proxy != null)
                 _proxyManage?.AddBan(Proxy);

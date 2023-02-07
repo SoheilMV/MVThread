@@ -7,28 +7,28 @@ namespace MVThread
     public class ProxyManage : IProxyInfo
     {
         private readonly object _obj = new object();
-        private bool _freez = false;
         private SecureRandom _random;
         private List<Uri> _used;
         private List<Uri> _bads;
         private List<Uri> _bans;
 
         public IProxyPool ProxyPool { get; private set; }
-        public int Count => ProxyPool != null ? ProxyPool.Count : 0;
+        public int Count => ProxyPool.Count;
         public int InUse => _used.Count;
-        public int BadsCount => _bads.Count;
-        public int BansCount => _bans.Count;
-        public int GoodsCount => Count - BadsCount - BansCount;
+        public int Bads => _bads.Count;
+        public int Bans => _bans.Count;
+        public int Goods => Count - Bads - Bans;
         public bool IsEmpty => Count == 0;
+        public bool Freez { get; set; }
 
-        public ProxyManage(IProxyPool proxies, bool freez)
+        public ProxyManage()
         {
-            ProxyPool = proxies;
-            _freez = freez;
             _random = new SecureRandom();
             _used = new List<Uri>();
             _bads = new List<Uri>();
             _bans = new List<Uri>();
+            ProxyPool = new ProxyPool();
+            Freez = false;
         }
 
         public Proxy Get()
@@ -37,11 +37,8 @@ namespace MVThread
             {
                 if (!IsEmpty)
                 {
-                    if (Count > 0 && GoodsCount <= InUse)
-                    {
-                        ClearBads();
-                        ClearBans();
-                    }
+                    if (Count > 0 && Goods <= InUse)
+                        ClearAll();
 
                     var Proxies = ProxyPool.Proxies.SkipWhile(proxy => _bads.Contains(proxy.Address) || _bans.Contains(proxy.Address) || _used.Contains(proxy.Address)).ToList();
                     int num = _random.Next(Proxies.Count);
@@ -58,7 +55,7 @@ namespace MVThread
         {
             lock (_obj)
             {
-                if (!_freez)
+                if (!Freez)
                     _bads.Add(proxy?.Address);
             }
         }
@@ -67,25 +64,37 @@ namespace MVThread
         {
             lock (_obj)
             {
-                if (!_freez)
+                if (!Freez)
                     _bans.Add(proxy?.Address);
             }
         }
+
+        #region Methods (internal)
 
         internal void Unuse(Proxy proxy)
         {
             lock (_obj)
             {
-                if (!_freez)
+                if (!Freez)
                     _used.Remove(proxy?.Address);
             }
         }
+
+        internal void ClearAll()
+        {
+            ClearBads();
+            ClearBans();
+        }
+
+        #endregion
+
+        #region Methods (private)
 
         private void Use(Proxy proxy)
         {
             lock (_obj)
             {
-                if (!_freez)
+                if (!Freez)
                     _used.Add(proxy?.Address);
             }
         }
@@ -105,5 +114,7 @@ namespace MVThread
                 _bans.Clear();
             }
         }
+
+        #endregion
     }
 }
