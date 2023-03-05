@@ -6,6 +6,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace MVThread
@@ -33,6 +34,7 @@ namespace MVThread
         protected int _position;
         protected int _bot;
         protected bool _useAsync = false;
+        protected Dictionary<string, Dictionary<string, object>> _references;
 
         #endregion
 
@@ -86,6 +88,7 @@ namespace MVThread
             _position = 0;
             _bot = 0;
             _useAsync = useAsync;
+            _references = new Dictionary<string, Dictionary<string, object>>();
         }
 
         #endregion
@@ -242,6 +245,10 @@ namespace MVThread
             {
                 int retry = 0;
                 string data = _wordlist.GetData();
+                string id = GetID();
+
+                if (!_references.ContainsKey(id))
+                    _references.Add(id, new Dictionary<string, object>());
 
                 Retry:
 
@@ -257,6 +264,8 @@ namespace MVThread
                         {
                             status = OnConfigAsync?.Invoke(this, new DataEventArgs()
                             {
+                                BotID = id,
+                                Storage = _references[id],
                                 Retry = retry,
                                 Data = data,
                                 ProxyDetail = proxyDetail,
@@ -268,6 +277,8 @@ namespace MVThread
                         {
                             status = OnConfig?.Invoke(this, new DataEventArgs()
                             {
+                                BotID = id,
+                                Storage = _references[id],
                                 Retry = retry,
                                 Data = data,
                                 ProxyDetail = proxyDetail,
@@ -302,6 +313,9 @@ namespace MVThread
                         Log = _log
                     });
                 }
+
+                if (_references.ContainsKey(id))
+                    _references.Remove(id);
             }
         }
 
@@ -362,6 +376,21 @@ namespace MVThread
                         return sr.ReadToEnd();
                     }
                 }
+            }
+        }
+
+        #endregion
+
+        #region Methods (protected)
+
+        protected string GetID()
+        {
+            SecureRandom random = new SecureRandom();
+            byte[] buffer = random.NextBytes(32);
+            using (MD5 md5 = MD5.Create())
+            {
+                byte[] hash = md5.ComputeHash(buffer);
+                return BitConverter.ToString(hash).Replace("-", "");
             }
         }
 
