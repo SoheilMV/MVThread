@@ -34,7 +34,7 @@ namespace MVThread
         protected int _position;
         protected int _bot;
         protected bool _useAsync = false;
-        protected Dictionary<string, Dictionary<string, object>> _references;
+        protected ParametersStorage _storage;
 
         #endregion
 
@@ -88,7 +88,7 @@ namespace MVThread
             _position = 0;
             _bot = 0;
             _useAsync = useAsync;
-            _references = new Dictionary<string, Dictionary<string, object>>();
+            _storage = new ParametersStorage();
         }
 
         #endregion
@@ -247,8 +247,8 @@ namespace MVThread
                 string data = _wordlist.GetData();
                 string id = GetID();
 
-                if (!_references.ContainsKey(id))
-                    _references.Add(id, new Dictionary<string, object>());
+                if (!_storage.ContainsID(id))
+                    _storage.Add(id);
 
                 Retry:
 
@@ -265,7 +265,7 @@ namespace MVThread
                             status = OnConfigAsync?.Invoke(this, new DataEventArgs()
                             {
                                 BotID = id,
-                                Storage = _references[id],
+                                Parameters = _storage[id],
                                 Retry = retry,
                                 Data = data,
                                 ProxyDetail = proxyDetail,
@@ -278,7 +278,7 @@ namespace MVThread
                             status = OnConfig?.Invoke(this, new DataEventArgs()
                             {
                                 BotID = id,
-                                Storage = _references[id],
+                                Parameters = _storage[id],
                                 Retry = retry,
                                 Data = data,
                                 ProxyDetail = proxyDetail,
@@ -314,8 +314,8 @@ namespace MVThread
                     });
                 }
 
-                if (_references.ContainsKey(id))
-                    _references.Remove(id);
+                if (_storage.ContainsID(id))
+                    _storage.Remove(id);
             }
         }
 

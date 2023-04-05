@@ -6,7 +6,7 @@ namespace MVThread
     public sealed class DataEventArgs : EventArgs
     {
         public string BotID { get; internal set; }
-        public Dictionary<string, object> Storage { get; internal set; }
+        public Parameters Parameters { get; internal set; }
         public int Retry { get; internal set; }
         public string Data { get; internal set; }
         public ProxyDetail ProxyDetail { get; internal set; }
