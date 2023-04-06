@@ -39,24 +39,30 @@ namespace MVThread
 
         public bool ContainsID(string id)
         {
-            for (int i = 0; i < this.Count; i++)
+            lock (_lock)
             {
-                var kv = this[i];
-                if (kv.Key == id.Trim())
-                    return true;
+                for (int i = 0; i < this.Count; i++)
+                {
+                    var kv = this[i];
+                    if (kv.Key == id.Trim())
+                        return true;
+                }
+                return false;
             }
-            return false;
         }
 
         private Parameters GetID(string id)
         {
-            for (int i = 0; i < this.Count; i++)
+            lock (_lock)
             {
-                var kv = this[i];
-                if (kv.Key == id.Trim())
-                    return kv.Value;
+                for (int i = 0; i < this.Count; i++)
+                {
+                    var kv = this[i];
+                    if (kv.Key == id.Trim())
+                        return kv.Value;
+                }
+                return null;
             }
-            return null;
         }
     }
 
