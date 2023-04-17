@@ -133,7 +133,7 @@ namespace MVThread
             List<Proxy> list = new List<Proxy>();
             foreach (var address in proxylist)
             {
-                if (Regex.IsMatch(address, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\:[0-9]{1,5}\\b"))
+                if (Regex.IsMatch(address, @"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$")) //https://regex101.com/r/ZmltXj/2
                 {
                     Proxy proxy = new Proxy(type, address);
                     list.Add(proxy);
@@ -161,7 +161,7 @@ namespace MVThread
                 try
                 {
                     string input = HttpWebRequest(address);
-                    MatchCollection mc = new Regex("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\:[0-9]{1,5}\\b").Matches(input);
+                    MatchCollection mc = new Regex(@"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$").Matches(input); //https://regex101.com/r/ZmltXj/2
                     List<string> proxylist = new List<string>();
                     foreach (object prx in mc)
                     {
