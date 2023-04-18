@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Linq;
 using System.Threading;
 using System.Diagnostics;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Security.Authentication;
 
 namespace MVThread
 {
@@ -143,13 +145,13 @@ namespace MVThread
             _proxyManage.ProxyPool.SetProxylist(list, join);
         }
 
-        public IEnumerable<string> GetProxylist(string address)
+        public async Task<IEnumerable<string>> GetProxylistAsync(string address)
         {
-            if (System.IO.File.Exists(address))
+            if (File.Exists(address))
             {
                 try
                 {
-                    return System.IO.File.ReadAllLines(address);
+                    return await File.ReadAllLinesAsync(address);
                 }
                 catch
                 {
@@ -160,15 +162,15 @@ namespace MVThread
             {
                 try
                 {
-                    string input = HttpWebRequest(address);
+                    string input = await HttpRequest(address);
                     MatchCollection mc = new Regex(@"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$").Matches(input); //https://regex101.com/r/ZmltXj/2
-                    List<string> proxylist = new List<string>();
+                    List<string> result = new List<string>();
                     foreach (object prx in mc)
                     {
                         Match match = (Match)prx;
-                        proxylist.Add(match.ToString());
+                        result.Add(match.ToString());
                     }
-                    return proxylist;
+                    return result;
                 }
                 catch
                 {
@@ -351,29 +353,23 @@ namespace MVThread
             }
         }
 
-        private string HttpWebRequest(string url)
+        private async Task<string> HttpRequest(string url)
         {
             ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
             ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => true;
-            try
+            using (HttpClientHandler httpClientHandler = new HttpClientHandler())
             {
-                var req = WebRequest.Create(url);
-                using (var res = (HttpWebResponse)req.GetResponse())
+                httpClientHandler.AutomaticDecompression = DecompressionMethods.All;
+                httpClientHandler.SslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
+                httpClientHandler.ServerCertificateCustomValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
+                using (HttpClient httpClient = new HttpClient(httpClientHandler))
                 {
-                    using (var sr = new StreamReader(res.GetResponseStream()))
+                    httpClient.DefaultRequestHeaders.ExpectContinue = true;
+                    using (HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, url))
                     {
-                        return sr.ReadToEnd();
-                    }
-                }
-            }
-            catch (WebException ex)
-            {
-                using (var res = (HttpWebResponse)ex.Response)
-                {
-                    using (var sr = new StreamReader(res.GetResponseStream()))
-                    {
-                        return sr.ReadToEnd();
+                        var response = await httpClient.SendAsync(req);
+                        return await response.Content.ReadAsStringAsync();
                     }
                 }
             }

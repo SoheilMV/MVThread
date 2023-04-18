@@ -1,5 +1,5 @@
 # MVThread [![Nuget](https://img.shields.io/nuget/v/MVThread)](https://www.nuget.org/packages/MVThread/)
-Multi Threading/Tasking in (.NET Framework 4.5+ / .NET Standard 2.0 / .NET 6.0)
+Multi Threading/Tasking in .NET
 
 #### Features
 - Support any lists
@@ -114,13 +114,13 @@ runner.SetProxylist(proxies, type);
 //or
 
 string url = "https://localhost/proxies/";
-var proxies = runner.GetProxylist(url);
+var proxies = await runner.GetProxylistAsync(url);
 runner.SetProxylist(proxies, type);
 
 //or
 
 string path = "C:\\Proxylist.txt";
-var proxies = runner.GetProxylist(path);
+var proxies = await runner.GetProxylistAsync(path);
 runner.SetProxylist(proxies, type);
 ```
 

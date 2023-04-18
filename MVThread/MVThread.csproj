@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45;net60</TargetFrameworks>
+    <TargetFramework>net60</TargetFramework>
     <Authors>Soheil MV</Authors>
     <Company>MVSoft</Company>
     <Copyright>© 2022-2023 MVSoft. All rights reserved.</Copyright>
-    <Description>Multi Threading/Tasking in (.NET Framework 4.5+ / .NET Standard 2.0 / .NET 6.0)</Description>
-    <Version>5.3.4</Version>
+    <Description>Multi Threading/Tasking</Description>
+    <Version>5.3.5</Version>
     <PackageTags>thread,task,multi,multithread,multitask,treading</PackageTags>
     <RepositoryType>Git</RepositoryType>
     <RepositoryUrl>https://github.com/SoheilMV/MVThread</RepositoryUrl>
