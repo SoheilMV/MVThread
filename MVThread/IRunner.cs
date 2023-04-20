@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Net;
 
 namespace MVThread
 {
@@ -25,7 +23,8 @@ namespace MVThread
         void SetWordlist(IEnumerable<string> combolist, int position = 0);
         void SetWordlist(IEnumerable<string> userlist, IEnumerable<string> passlist, ComboType type, int position = 0);
         void SetProxylist(IEnumerable<string> proxylist, ProxyType type, bool join = false);
-        Task<IEnumerable<string>> GetProxylistAsync(string address);
+        Task<IEnumerable<string>> GetProxylistAsync(string path, IWebProxy proxy = null);
+        IEnumerable<string> GetProxylist(string path, IWebProxy proxy = null);
         void Start(int bot);
         void Stop();
     }

@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace MVThread.Test
 {
@@ -73,22 +74,22 @@ namespace MVThread.Test
             AddToListData("Completed!"); //displays the completed message when the runner complete
         }
 
-        private Status Runner_OnConfig(object sender, DataEventArgs e)
+        private ConfigStatus Runner_OnConfig(object sender, DataEventArgs e)
         {
             AddToListData(e.Data); //add data to listbox
 
             e.Save.WriteLine("Data.txt", e.Data); //save data
 
-            return Status.OK;
+            return ConfigStatus.OK;
         }
 
-        private async System.Threading.Tasks.Task<Status> _runner_OnConfigAsync(object sender, DataEventArgs e)
+        private async Task<ConfigStatus> _runner_OnConfigAsync(object sender, DataEventArgs e)
         {
             AddToListData(e.Data); //add data to listbox
 
             e.Save.WriteLine("Data.txt", e.Data); //save data
 
-            return Status.OK;
+            return ConfigStatus.OK;
         }
 
         private void Runner_OnException(object sender, ExceptionEventArgs e)

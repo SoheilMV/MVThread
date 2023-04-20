@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Diagnostics;
-using System.Collections.Generic;
+﻿using System.Diagnostics;
 
 namespace MVThread
 {
@@ -128,7 +124,7 @@ namespace MVThread
                 {
                     using (ProxyDetail proxyDetail = new ProxyDetail(_proxyManage, ct))
                     {
-                        Status? status = Status.OK;
+                        ConfigStatus? status = ConfigStatus.OK;
                         if (_useAsync)
                         {
                             status = OnConfigAsync?.Invoke(this, new DataEventArgs()
@@ -158,13 +154,13 @@ namespace MVThread
 
                         switch (status)
                         {
-                            case Status.OK:
+                            case ConfigStatus.OK:
                                 _datapool.Add();
                                 break;
-                            case Status.Retry:
+                            case ConfigStatus.Retry:
                                 retry++;
                                 goto Retry;
-                            case Status.TheEnd:
+                            case ConfigStatus.TheEnd:
                                 _theEnd = true;
                                 break;
                             default:

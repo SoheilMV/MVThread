@@ -1,6 +1,6 @@
 ﻿namespace MVThread
 {
-    public enum Status
+    public enum ConfigStatus
     {
         OK,
         Retry,

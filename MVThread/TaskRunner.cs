@@ -1,15 +1,8 @@
-﻿using System;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Linq;
-using System.Threading;
+﻿using System.Net;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using System.Security.Authentication;
+using System.Text.RegularExpressions;
 
 namespace MVThread
 {
@@ -31,12 +24,12 @@ namespace MVThread
         protected Stopwatch _stopwatch;
         protected IWordList _wordlist;
         protected RunnerStatus _runnerStatus;
+        protected ParametersStorage _storage;
         protected bool _theEnd;
         protected bool _run;
         protected int _position;
         protected int _bot;
         protected bool _useAsync = false;
-        protected ParametersStorage _storage;
 
         #endregion
 
@@ -47,7 +40,7 @@ namespace MVThread
         public RunnerStatus RunnerStatus => _runnerStatus;
         public IProxyInfo ProxyInfo => _proxyManage;
         public string LogAddress { get { return _log.Address; } set { _log.Address = value; } }
-        public Progress Progress => _wordlist == null ? new Progress(0, 0) : new Progress(_wordlist.Count, _wordlist.Position);
+        public Progress Progress => _wordlist == null || _wordlist.Position == 0 ? new Progress(0, 0) : IsCompleted ? new Progress(_wordlist.Count, _wordlist.Count) : new Progress(_wordlist.Count, _wordlist.Position - 1);
         public int CPM => _datapool.CPM;
         public virtual int Active => _taskList.Where(t => !t.IsCompleted).ToList().Count;
         public string Elapsed
@@ -135,7 +128,8 @@ namespace MVThread
             List<Proxy> list = new List<Proxy>();
             foreach (var address in proxylist)
             {
-                if (Regex.IsMatch(address, @"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$")) //https://regex101.com/r/ZmltXj/2
+                string proxyPattern = @"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$"; //https://regex101.com/r/ZmltXj/2
+                if (Regex.IsMatch(address, proxyPattern))
                 {
                     Proxy proxy = new Proxy(type, address);
                     list.Add(proxy);
@@ -145,32 +139,27 @@ namespace MVThread
             _proxyManage.ProxyPool.SetProxylist(list, join);
         }
 
-        public async Task<IEnumerable<string>> GetProxylistAsync(string address)
+        public async Task<IEnumerable<string>> GetProxylistAsync(string address, IWebProxy proxy = null)
         {
+            string urlPattern = @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?";
+            string input = string.Empty;
+
             if (File.Exists(address))
             {
                 try
                 {
-                    return await File.ReadAllLinesAsync(address);
+                    input = await File.ReadAllTextAsync(address);
                 }
                 catch
                 {
                     throw new Exception("Cannot access your file.");
                 }
             }
-            else if (Regex.IsMatch(address, @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?"))
+            else if (Regex.IsMatch(address, urlPattern))
             {
                 try
                 {
-                    string input = await HttpRequest(address);
-                    MatchCollection mc = new Regex(@"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$").Matches(input); //https://regex101.com/r/ZmltXj/2
-                    List<string> result = new List<string>();
-                    foreach (object prx in mc)
-                    {
-                        Match match = (Match)prx;
-                        result.Add(match.ToString());
-                    }
-                    return result;
+                    input = await HttpRequest(address, proxy);
                 }
                 catch
                 {
@@ -179,6 +168,13 @@ namespace MVThread
             }
             else
                 throw new Exception("The address format is incorrect.");
+
+            return ProxyFinder(input);
+        }
+
+        public IEnumerable<string> GetProxylist(string url, IWebProxy proxy = null)
+        {
+            return GetProxylistAsync(url, proxy).Result;
         }
 
         public virtual void Start(int bot)
@@ -261,7 +257,7 @@ namespace MVThread
                 {
                     using (ProxyDetail proxyDetail = new ProxyDetail(_proxyManage, ct))
                     {
-                        Status? status = Status.OK;
+                        ConfigStatus? status = ConfigStatus.OK;
                         if (_useAsync)
                         {
                             status = OnConfigAsync?.Invoke(this, new DataEventArgs()
@@ -291,13 +287,13 @@ namespace MVThread
 
                         switch (status)
                         {
-                            case Status.OK:
+                            case ConfigStatus.OK:
                                 _datapool.Add();
                                 break;
-                            case Status.Retry:
+                            case ConfigStatus.Retry:
                                 retry++;
                                 goto Retry;
-                            case Status.TheEnd:
+                            case ConfigStatus.TheEnd:
                                 _theEnd = true;
                                 break;
                             default:
@@ -353,19 +349,18 @@ namespace MVThread
             }
         }
 
-        private async Task<string> HttpRequest(string url)
+        private async Task<string> HttpRequest(string url, IWebProxy webProxy)
         {
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
-            ServicePointManager.ServerCertificateValidationCallback += (sender, certification, chain, sslPolicyErrors) => true;
             using (HttpClientHandler httpClientHandler = new HttpClientHandler())
             {
                 httpClientHandler.AutomaticDecompression = DecompressionMethods.All;
                 httpClientHandler.SslProtocols = SslProtocols.Tls | SslProtocols.Tls11 | SslProtocols.Tls12 | SslProtocols.Tls13;
                 httpClientHandler.ServerCertificateCustomValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
+                if (webProxy != null)
+                    httpClientHandler.Proxy = webProxy;
                 using (HttpClient httpClient = new HttpClient(httpClientHandler))
                 {
-                    httpClient.DefaultRequestHeaders.ExpectContinue = true;
+                    //httpClient.DefaultRequestHeaders.ExpectContinue = false;
                     using (HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, url))
                     {
                         var response = await httpClient.SendAsync(req);
@@ -373,6 +368,19 @@ namespace MVThread
                     }
                 }
             }
+        }
+
+        private IEnumerable<string> ProxyFinder(string input)
+        {
+            string proxyPattern = @"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?"; //https://regex101.com/r/ZmltXj/1
+            MatchCollection proxies = new Regex(proxyPattern).Matches(input);
+            List<string> result = new List<string>();
+            foreach (object proxy in proxies)
+            {
+                Match match = (Match)proxy;
+                result.Add(match.ToString());
+            }
+            return result;
         }
 
         #endregion

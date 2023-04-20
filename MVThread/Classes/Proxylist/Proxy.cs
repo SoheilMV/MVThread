@@ -10,7 +10,9 @@ namespace MVThread
         {
             if(string.IsNullOrEmpty(address))
                 throw new ArgumentNullException("address");
-            if(!Regex.IsMatch(address, @"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$")) //https://regex101.com/r/ZmltXj/2
+
+            string proxyPattern = @"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$"; //https://regex101.com/r/ZmltXj/2
+            if (!Regex.IsMatch(address, proxyPattern))
                 throw new Exception("The address format is incorrect.");
 
             string host = string.Empty;
@@ -24,10 +26,20 @@ namespace MVThread
                 host = array[0];
                 port = array[1];
             }
-            if(array.Length == 3)
+            else if (array.Length == 3)
+            {
+                host = array[0];
+                port = array[1];
                 username = array[2];
-            if(array.Length == 4)
+            }
+            if (array.Length == 4)
+            {
+                host = array[0];
+                port = array[1];
+                username = array[2];
                 password = array[3];
+            }
+                
 
             switch (type)
             {

@@ -6,12 +6,14 @@
     <Company>MVSoft</Company>
     <Copyright>© 2022-2023 MVSoft. All rights reserved.</Copyright>
     <Description>Multi Threading/Tasking</Description>
-    <Version>5.3.5</Version>
+    <Version>5.3.6</Version>
     <PackageTags>thread,task,multi,multithread,multitask,treading</PackageTags>
     <RepositoryType>Git</RepositoryType>
     <RepositoryUrl>https://github.com/SoheilMV/MVThread</RepositoryUrl>
     <PackageProjectUrl>https://github.com/SoheilMV/MVThread</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
     <FileVersion></FileVersion>
     <AssemblyVersion></AssemblyVersion>
   </PropertyGroup>
