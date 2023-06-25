@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace MVThread
+﻿namespace MVThread
 {
     public class ComboList : IWordList
     {

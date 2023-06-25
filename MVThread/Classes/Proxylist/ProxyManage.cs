@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-
-namespace MVThread
+﻿namespace MVThread
 {
     public class ProxyManage : IProxyInfo
     {
@@ -56,7 +52,7 @@ namespace MVThread
             lock (_obj)
             {
                 if (!Freez)
-                    _bads.Add(proxy?.Address);
+                    _bads.Add(proxy!.Address);
             }
         }
 
@@ -65,7 +61,7 @@ namespace MVThread
             lock (_obj)
             {
                 if (!Freez)
-                    _bans.Add(proxy?.Address);
+                    _bans.Add(proxy!.Address);
             }
         }
 
@@ -76,7 +72,7 @@ namespace MVThread
             lock (_obj)
             {
                 if (!Freez)
-                    _used.Remove(proxy?.Address);
+                    _used.Remove(proxy!.Address);
             }
         }
 
@@ -95,7 +91,7 @@ namespace MVThread
             lock (_obj)
             {
                 if (!Freez)
-                    _used.Add(proxy?.Address);
+                    _used.Add(proxy!.Address);
             }
         }
 

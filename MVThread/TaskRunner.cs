@@ -48,7 +48,7 @@ namespace MVThread
             get
             {
                 TimeSpan ts = TimeSpan.FromMilliseconds(_stopwatch.ElapsedMilliseconds);
-                return string.Format("{0:00}:{1:00}:{2:00}:{3:00}", ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
+                return string.Format(Constant.ElapsedFormat, ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
             }
         }
         public bool UseAsync { get { return _useAsync; } set { _useAsync = value; } }
@@ -93,11 +93,11 @@ namespace MVThread
         public void SetWordlist(IEnumerable<string> combolist, int position = 0)
         {
             if (combolist == null)
-                throw new ArgumentNullException("Wordlist is null.");
+                throw new ArgumentNullException(Constant.Wordlist_ArgumentNullException);
             if (combolist.Count() == 0)
-                throw new ArgumentNullException("Wordlist is null.");
+                throw new ArgumentNullException(Constant.Wordlist_ArgumentNullException);
             if (position < 0 || position > combolist.Count() - 1)
-                throw new ArgumentNullException($"Position 0-{combolist.Count() - 1}");
+                throw new ArgumentNullException(Constant.Wordlist_Position_ArgumentNullException.Replace("<Count>", (combolist.Count() - 1).ToString()));
 
             _position = position;
             _wordlist = new ComboList(combolist, position);
@@ -106,13 +106,13 @@ namespace MVThread
         public void SetWordlist(IEnumerable<string> userlist, IEnumerable<string> passlist, ComboType type, int position = 0)
         {
             if (userlist == null || passlist == null)
-                throw new ArgumentNullException("Wordlist is null.");
+                throw new ArgumentNullException(Constant.Wordlist_ArgumentNullException);
             if (userlist.Count() == 0)
-                throw new ArgumentNullException("Wordlist is null.");
+                throw new ArgumentNullException(Constant.Wordlist_ArgumentNullException);
             if (passlist.Count() == 0)
-                throw new ArgumentNullException("Wordlist is null.");
+                throw new ArgumentNullException(Constant.Wordlist_ArgumentNullException);
             if (position < 0 || position > (userlist.Count() * passlist.Count()) - 1)
-                throw new ArgumentNullException($"Position 0-{(userlist.Count() * passlist.Count()) - 1}");
+                throw new ArgumentNullException(Constant.Wordlist_Position_ArgumentNullException.Replace("<Count>", ((userlist.Count() * passlist.Count()) - 1).ToString()));
 
             _position = position;
             _wordlist = new CredentialsList(userlist, passlist, type, position);
@@ -121,15 +121,14 @@ namespace MVThread
         public void SetProxylist(IEnumerable<string> proxylist, ProxyType type, bool join = false)
         {
             if (proxylist == null)
-                throw new ArgumentNullException("Proxylist is null.");
+                throw new ArgumentNullException(Constant.Proxylist_ArgumentNullException);
             if (proxylist.Count() == 0)
-                throw new ArgumentNullException("Proxylist is null.");
+                throw new ArgumentNullException(Constant.Proxylist_ArgumentNullException);
 
             List<Proxy> list = new List<Proxy>();
             foreach (var address in proxylist)
             {
-                string proxyPattern = @"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?$"; //https://regex101.com/r/ZmltXj/2
-                if (Regex.IsMatch(address, proxyPattern))
+                if (Regex.IsMatch(address, Constant.ProxyPattern_SingleLine))
                 {
                     Proxy proxy = new Proxy(type, address);
                     list.Add(proxy);
@@ -139,9 +138,8 @@ namespace MVThread
             _proxyManage.ProxyPool.SetProxylist(list, join);
         }
 
-        public async Task<IEnumerable<string>> GetProxylistAsync(string address, IWebProxy proxy = null)
+        public async Task<IEnumerable<string>> GetProxylistAsync(string address, IWebProxy? proxy = default)
         {
-            string urlPattern = @"http(s)?://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)?";
             string input = string.Empty;
 
             if (File.Exists(address))
@@ -152,10 +150,10 @@ namespace MVThread
                 }
                 catch
                 {
-                    throw new Exception("Cannot access your file.");
+                    throw new Exception(Constant.Proxylist_FileException);
                 }
             }
-            else if (Regex.IsMatch(address, urlPattern))
+            else if (Regex.IsMatch(address, Constant.UrlPattern))
             {
                 try
                 {
@@ -163,16 +161,16 @@ namespace MVThread
                 }
                 catch
                 {
-                    throw new Exception("Please enter valid proxy link and try.");
+                    throw new Exception(Constant.Proxylist_LinkException);
                 }
             }
             else
-                throw new Exception("The address format is incorrect.");
+                throw new Exception(Constant.Proxylist_AddressException);
 
             return ProxyFinder(input);
         }
 
-        public IEnumerable<string> GetProxylist(string url, IWebProxy proxy = null)
+        public IEnumerable<string> GetProxylist(string url, IWebProxy? proxy = default)
         {
             return GetProxylistAsync(url, proxy).Result;
         }
@@ -182,13 +180,13 @@ namespace MVThread
             if (!_run)
             {
                 if (_wordlist == null)
-                    throw new Exception("Wordlist is null.");
+                    throw new Exception(Constant.Wordlist_ArgumentNullException);
                 if (!_wordlist.HasNext)
-                    throw new Exception("Wordlist is null.");
+                    throw new Exception(Constant.Wordlist_ArgumentNullException);
                 if (UseAsync && OnConfigAsync == null)
-                    throw new Exception("OnConfigAsync event cannot be null.");
+                    throw new Exception(Constant.OnConfigAsync_Exception);
                 if (!UseAsync && OnConfig == null)
-                    throw new Exception("OnConfig event cannot be null.");
+                    throw new Exception(Constant.OnConfig_Exception);
 
                 _theEnd = false;
                 _run = true;
@@ -349,7 +347,7 @@ namespace MVThread
             }
         }
 
-        private async Task<string> HttpRequest(string url, IWebProxy webProxy)
+        private async Task<string> HttpRequest(string url, IWebProxy? webProxy)
         {
             using (HttpClientHandler httpClientHandler = new HttpClientHandler())
             {
@@ -372,8 +370,7 @@ namespace MVThread
 
         private IEnumerable<string> ProxyFinder(string input)
         {
-            string proxyPattern = @"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)(?::(\w+))?(?::(\w+))?"; //https://regex101.com/r/ZmltXj/1
-            MatchCollection proxies = new Regex(proxyPattern).Matches(input);
+            MatchCollection proxies = new Regex(Constant.ProxyPattern_MultiLine).Matches(input);
             List<string> result = new List<string>();
             foreach (object proxy in proxies)
             {

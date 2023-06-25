@@ -56,13 +56,13 @@ namespace MVThread
             if (!_run)
             {
                 if (_wordlist == null)
-                    throw new Exception("Wordlist is null.");
+                    throw new Exception(Constant.Wordlist_ArgumentNullException);
                 if (!_wordlist.HasNext)
-                    throw new Exception("Wordlist is null.");
+                    throw new Exception(Constant.Wordlist_ArgumentNullException);
                 if (UseAsync && OnConfigAsync == null)
-                    throw new Exception("OnConfigAsync event cannot be null.");
+                    throw new Exception(Constant.OnConfigAsync_Exception);
                 if (!UseAsync && OnConfig == null)
-                    throw new Exception("OnConfig event cannot be null.");
+                    throw new Exception(Constant.OnConfig_Exception);
 
                 _theEnd = false;
                 _run = true;

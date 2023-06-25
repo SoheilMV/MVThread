@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace MVThread
+﻿namespace MVThread
 {
     public class Progress
     {

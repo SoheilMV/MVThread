@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace MVThread
+﻿namespace MVThread
 {
     public class Parameters : List<KeyValuePair<string, object>>
     {
