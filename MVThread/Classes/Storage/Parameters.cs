@@ -2,11 +2,16 @@
 {
     public class Parameters : List<KeyValuePair<string, object>>
     {
-        public object this[string key]
+        public object? this[string key]
         {
             get
             {
                 return GetValue(key);
+            }
+            set
+            {
+                if(value != null)
+                    Add(key, value);
             }
         }
 
@@ -35,7 +40,7 @@
             return false;
         }
 
-        private object GetValue(string key)
+        private object? GetValue(string key)
         {
             for (int i = 0; i < this.Count; i++)
             {

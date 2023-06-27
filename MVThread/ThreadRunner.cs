@@ -130,7 +130,7 @@ namespace MVThread
                             status = OnConfigAsync?.Invoke(this, new DataEventArgs()
                             {
                                 BotID = id,
-                                Parameters = _storage[id],
+                                Parameters = _storage[id]!,
                                 Retry = retry,
                                 Data = data,
                                 ProxyDetail = proxyDetail,
@@ -143,7 +143,7 @@ namespace MVThread
                             status = OnConfig?.Invoke(this, new DataEventArgs()
                             {
                                 BotID = id,
-                                Parameters = _storage[id],
+                                Parameters = _storage[id]!,
                                 Retry = retry,
                                 Data = data,
                                 ProxyDetail = proxyDetail,

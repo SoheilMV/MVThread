@@ -8,7 +8,7 @@
         {
         }
 
-        public Parameters this[string id]
+        public Parameters? this[string id]
         {
             get
             {
@@ -49,7 +49,7 @@
             }
         }
 
-        private Parameters GetID(string id)
+        private Parameters? GetID(string id)
         {
             lock (_lock)
             {
