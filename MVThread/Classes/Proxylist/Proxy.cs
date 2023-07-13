@@ -7,60 +7,69 @@ namespace MVThread
     {
         public Uri Address { get; private set; }
         public NetworkCredential NetworkCredential { get; private set; }
+        public string Host { get; private set; } = string.Empty;
+        public string Port { get; private set; } = string.Empty;
+        public string Password { get; private set; } = string.Empty;
+        public string Username { get; private set; } = string.Empty;
+        public bool HostIsDomain { get; private set; }
+        public bool HostIsIPv4 { get; private set; }
+        public bool HostIsIPv6 { get; private set; }
 
         public Proxy(ProxyType type, string address)
         {
-            if(string.IsNullOrEmpty(address))
+            if (string.IsNullOrEmpty(address))
                 throw new ArgumentNullException(nameof(address));
 
-            if (!Regex.IsMatch(address, Constant.ProxyPattern_SingleLine))
+            Regex proxyRegex = new Regex(Constant.ProxyPattern, RegexOptions.Compiled);
+
+            if (!proxyRegex.IsMatch(address))
                 throw new Exception(Constant.Proxylist_AddressException);
 
-            string host = string.Empty;
-            string port = string.Empty;
-            string username = string.Empty;
-            string password = string.Empty;
+            Match proxyMatch = proxyRegex.Match(address);
 
-            string[] array = address.Split(new string[] { Constant.Separator }, StringSplitOptions.RemoveEmptyEntries);
-            if (array.Length == 2)
-            {
-                host = array[0];
-                port = array[1];
-            }
-            else if (array.Length == 3)
-            {
-                host = array[0];
-                port = array[1];
-                username = array[2];
-            }
-            if (array.Length == 4)
-            {
-                host = array[0];
-                port = array[1];
-                username = array[2];
-                password = array[3];
-            }
-                
+            Host = proxyMatch.Groups[1].Value;
+            Port = proxyMatch.Groups[2].Value;
+            Username = proxyMatch.Groups[3].Value;
+            Password = proxyMatch.Groups[4].Value;
+
+            HostIsDomain = Regex.IsMatch(Host, Constant.DomainPattern, RegexOptions.Compiled);
+            HostIsIPv4 = Regex.IsMatch(Host, Constant.IPv4Pattern, RegexOptions.Compiled);
+            HostIsIPv6 = Regex.IsMatch(Host, Constant.IPv6Pattern, RegexOptions.Compiled);
 
             switch (type)
             {
                 case ProxyType.Http:
-                    Address = new UriBuilder($"{Constant.Scheme_Http}://{host}:{port}").Uri;
+                    if (HostIsIPv6)
+                        Address = new UriBuilder($"{Constant.Scheme_Http}://[{Host}]:{Port}").Uri;
+                    else
+                        Address = new UriBuilder($"{Constant.Scheme_Http}://{Host}:{Port}").Uri;
                     break;
                 case ProxyType.Socks4:
-                    Address = new UriBuilder($"{Constant.Scheme_Socks4}://{host}:{port}").Uri;
+                    if (HostIsIPv6)
+                        Address = new UriBuilder($"{Constant.Scheme_Socks4}://[{Host}]:{Port}").Uri;
+                    else
+                        Address = new UriBuilder($"{Constant.Scheme_Socks4}://{Host}:{Port}").Uri;
                     break;
                 case ProxyType.Socks4a:
-                    Address = new UriBuilder($"{Constant.Scheme_Socks4a}://{host}:{port}").Uri;
+                    if (HostIsIPv6)
+                        Address = new UriBuilder($"{Constant.Scheme_Socks4a}://[{Host}]:{Port}").Uri;
+                    else
+                        Address = new UriBuilder($"{Constant.Scheme_Socks4a}://{Host}:{Port}").Uri;
                     break;
                 case ProxyType.Socks5:
-                    Address = new UriBuilder($"{Constant.Scheme_Socks5}://{host}:{port}").Uri;
+                    if (HostIsIPv6)
+                        Address = new UriBuilder($"{Constant.Scheme_Socks5}://[{Host}]:{Port}").Uri;
+                    else
+                        Address = new UriBuilder($"{Constant.Scheme_Socks5}://{Host}:{Port}").Uri;
                     break;
                 default:
-                    Address = new UriBuilder($"{Constant.Scheme_Http}://{host}:{port}").Uri;
+                    if (HostIsIPv6)
+                        Address = new UriBuilder($"{Constant.Scheme_Http}://[{Host}]:{Port}").Uri;
+                    else
+                        Address = new UriBuilder($"{Constant.Scheme_Http}://{Host}:{Port}").Uri;
                     break;
             }
-            NetworkCredential = new NetworkCredential(username, password);
+            NetworkCredential = new NetworkCredential(Username, Password);
         }
 
         public ProxyType GetProxyType()

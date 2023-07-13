@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 
 namespace MVThread.Test
 {
@@ -22,12 +23,11 @@ namespace MVThread.Test
             _runner.OnStarted += Runner_OnStarted;
             _runner.OnStopped += Runner_OnStopped;
             _runner.OnCompleted += Runner_OnCompeleted;
-            _runner.OnConfig += Runner_OnConfig;
             _runner.OnConfigAsync += _runner_OnConfigAsync;
             _runner.OnException += Runner_OnException;
         }
 
-        private void btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object sender, EventArgs e)
         {
             Reset();
 
@@ -74,27 +74,23 @@ namespace MVThread.Test
             AddToListData("Completed!"); //displays the completed message when the runner complete
         }
 
-        private ConfigStatus Runner_OnConfig(object sender, DataEventArgs e)
-        {
-            AddToListData(e.Data); //add data to listbox
-
-            e.Save.WriteLine("Data.txt", e.Data); //save data
-
-            return ConfigStatus.OK;
-        }
-
         private async Task<ConfigStatus> _runner_OnConfigAsync(object sender, DataEventArgs e)
         {
-            AddToListData(e.Data); //add data to listbox
+            if (!e.Parameters.ContainsKey("data"))
+            {
+                e.Parameters["data"] = e.Data;
+                return ConfigStatus.Retry;
+            }
 
-            e.Save.WriteLine("Data.txt", e.Data); //save data
+            AddToListData(e.Parameters["data"]!.ToString()!); //add data to listbox
+            e.Save.WriteLine("Data.txt", e.Parameters["data"]!.ToString()!); //save data
 
             return ConfigStatus.OK;
         }
 
         private void Runner_OnException(object sender, ExceptionEventArgs e)
         {
-            e.Log.WriteLine($"{e.Location}: {e.Exception.Message}"); //any error in events will show you
+            e.Log.Write($"{e.Location}: {e.Exception.Message}"); //any error in events will show you
         }
 
         private void AddToListData(string item)

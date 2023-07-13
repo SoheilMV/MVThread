@@ -10,6 +10,8 @@ Multi Threading/Tasking in .NET
 - Show elapsed time
 - Show the number of threads running
 - Show progress value
+- Keeping the information of each bot until the end of the work
+- Professional proxy management
 
 #### Events
 - Start

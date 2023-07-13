@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Security.Authentication;
@@ -128,7 +129,7 @@ namespace MVThread
             List<Proxy> list = new List<Proxy>();
             foreach (var address in proxylist)
             {
-                if (Regex.IsMatch(address, Constant.ProxyPattern_SingleLine))
+                if (Regex.IsMatch(address, Constant.ProxyPattern))
                 {
                     Proxy proxy = new Proxy(type, address);
                     list.Add(proxy);
@@ -146,7 +147,13 @@ namespace MVThread
             {
                 try
                 {
-                    input = await File.ReadAllTextAsync(address);
+                    using (var stream = new FileStream(address, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        using (var reader = new StreamReader(stream, Encoding.UTF8))
+                        {
+                            input = await reader.ReadToEndAsync();
+                        }
+                    }
                 }
                 catch
                 {
@@ -170,9 +177,9 @@ namespace MVThread
             return ProxyFinder(input);
         }
 
-        public IEnumerable<string> GetProxylist(string url, IWebProxy? proxy = default)
+        public IEnumerable<string> GetProxylist(string address, IWebProxy? proxy = default)
         {
-            return GetProxylistAsync(url, proxy).Result;
+            return GetProxylistAsync(address, proxy).Result;
         }
 
         public virtual void Start(int bot)
@@ -370,7 +377,7 @@ namespace MVThread
 
         private IEnumerable<string> ProxyFinder(string input)
         {
-            MatchCollection proxies = new Regex(Constant.ProxyPattern_MultiLine).Matches(input);
+            MatchCollection proxies = new Regex(Constant.ProxyPattern).Matches(input);
             List<string> result = new List<string>();
             foreach (object proxy in proxies)
             {

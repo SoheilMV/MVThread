@@ -89,7 +89,7 @@
                 string user = _list1[userIndex[0]].ElementAt(userIndex[1]);
                 string pass = _list2[passIndex[0]].ElementAt(passIndex[1]);
                 SetPosition(1);
-                return $"{user.Trim()}:{pass.Trim()}";
+                return $"{user.Trim()}{Constant.Wordlist_Separator}{pass.Trim()}";
             }
         }
 
