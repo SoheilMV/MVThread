@@ -3,6 +3,7 @@
     public class CredentialsList : IWordList
     {
         private readonly object _obj = new object();
+        private readonly int _listsLength = 10000;
         private ComboType _type;
         private List<IEnumerable<string>> _list1;
         private List<IEnumerable<string>> _list2;
@@ -13,44 +14,10 @@
 
         public CredentialsList(IEnumerable<string> usernames, IEnumerable<string> passwords, ComboType type = ComboType.ChangePass, int position = 0)
         {
-            _list1 = new List<IEnumerable<string>>();
-            _list2 = new List<IEnumerable<string>>();
+            _list1 = GetLists(usernames);
+            _list2 = GetLists(passwords);
 
             _type = type;
-
-            var userlist = usernames.ToList();
-            while (userlist.Count > 0)
-            {
-                string[] array = new string[10000];
-                if (userlist.Count >= 10000)
-                {
-                    userlist.CopyTo(0, array, 0, 10000);
-                    _list1.Add(array);
-                    userlist.RemoveRange(0, 10000);
-                }
-                else
-                {
-                    _list1.Add(userlist.ToArray());
-                    userlist.RemoveRange(0, userlist.Count);
-                }
-            }
-
-            var passlist = passwords.ToList();
-            while (passlist.Count > 0)
-            {
-                string[] array = new string[10000];
-                if (passlist.Count >= 10000)
-                {
-                    passlist.CopyTo(0, array, 0, 10000);
-                    _list2.Add(array);
-                    passlist.RemoveRange(0, 10000);
-                }
-                else
-                {
-                    _list2.Add(passlist.ToArray());
-                    passlist.RemoveRange(0, passlist.Count);
-                }
-            }
 
             if (position > 0 && position < Count)
                 SetPosition(position);
@@ -84,13 +51,35 @@
         {
             lock (_obj)
             {
-                var userIndex = GetIndex(_row);
-                var passIndex = GetIndex(_cell);
-                string user = _list1[userIndex[0]].ElementAt(userIndex[1]);
-                string pass = _list2[passIndex[0]].ElementAt(passIndex[1]);
+                var userPosition = GetPosition(_row);
+                var passPosition = GetPosition(_cell);
+                string user = _list1[userPosition.row].ElementAt(userPosition.index);
+                string pass = _list2[passPosition.row].ElementAt(passPosition.index);
                 SetPosition(1);
                 return $"{user.Trim()}{Constant.Wordlist_Separator}{pass.Trim()}";
             }
+        }
+
+        private List<IEnumerable<string>> GetLists(IEnumerable<string> list)
+        {
+            List<IEnumerable<string>> lists = new List<IEnumerable<string>>();
+            var items = list.ToList();
+            while (items.Count > 0)
+            {
+                string[] array = new string[_listsLength];
+                if (items.Count >= _listsLength)
+                {
+                    items.CopyTo(0, array, 0, _listsLength);
+                    lists.Add(array);
+                    items.RemoveRange(0, _listsLength);
+                }
+                else
+                {
+                    lists.Add(items.ToArray());
+                    items.RemoveRange(0, items.Count);
+                }
+            }
+            return lists;
         }
 
         private void SetPosition(int position)
@@ -125,9 +114,7 @@
         {
             int count = 0;
             foreach (var list in _list1)
-            {
                 count += list.Count();
-            }
             return count;
         }
 
@@ -135,31 +122,25 @@
         {
             int count = 0;
             foreach (var list in _list2)
-            {
                 count += list.Count();
-            }
             return count;
         }
 
-        private int[] GetIndex(int position)
+        private (int row, int index) GetPosition(int position)
         {
-            int i = 0;
-            int pos = 0;
-
-            while (true)
+            int row = 0;
+            while (!(position < _listsLength || position < ((row + 1) * _listsLength)))
             {
-                if (position < 10000 || position < ((i + 1) * 10000))
-                    break;
-                else
-                    i++;
+                row++;
             }
 
-            if (position < 10000)
-                pos = position;
+            int index;
+            if (position < _listsLength)
+                index = position;
             else
-                pos = position - (i * 10000);
+                index = position - (row * _listsLength);
 
-            return new int[] { i, pos };
+            return (row, index);
         }
     }
 }

@@ -27,7 +27,7 @@ namespace MVThread.Test
             _runner.OnException += Runner_OnException;
         }
 
-        private async void btnStart_Click(object sender, EventArgs e)
+        private void btnStart_Click(object sender, EventArgs e)
         {
             Reset();
 
@@ -53,7 +53,7 @@ namespace MVThread.Test
 
         private void timer_Tick(object sender, EventArgs e)
         {
-            this.Text = $"Test2 - CPM : {_runner.CPM}";
+            this.Text = $"Test - CPM : {_runner.CPM} - Proxy : {_runner.ProxyInfo.Count}";
             lblChecked.Text = $"Checked : {_runner.Progress.Value}/{_runner.Progress.MaxValue}";
             pbChecked.Value = _runner.Progress.Value; //set progress bar value
             lblPercentage.Text = $"{_runner.Progress.Percentage}%"; //show progress percentage

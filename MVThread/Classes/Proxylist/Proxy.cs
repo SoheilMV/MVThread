@@ -20,12 +20,37 @@ namespace MVThread
             if (string.IsNullOrEmpty(address))
                 throw new ArgumentNullException(nameof(address));
 
-            Regex proxyRegex = new Regex(Constant.ProxyPattern, RegexOptions.Compiled);
+            ParseWithRegex(type, address);
+        }
 
-            if (!proxyRegex.IsMatch(address))
+        public ProxyType GetProxyType()
+        {
+            if(Address.Scheme == Constant.Scheme_Http)
+                return ProxyType.Http;
+            else if(Address.Scheme == Constant.Scheme_Socks4)
+                return ProxyType.Socks4;
+            else if (Address.Scheme == Constant.Scheme_Socks4a)
+                return ProxyType.Socks4a;
+            else if (Address.Scheme == Constant.Scheme_Socks5)
+                return ProxyType.Socks5;
+            else
+                throw new Exception(Constant.Scheme_Exception);
+        }
+
+        public override string ToString()
+        {
+            if (!string.IsNullOrEmpty(NetworkCredential.UserName) && NetworkCredential.SecurePassword.Length > 0)
+                return $"{Address.Host}:{Address.Port}:{NetworkCredential.UserName}:{NetworkCredential.Password}";
+            else
+                return $"{Address.Host}:{Address.Port}";
+        }
+
+        private void ParseWithRegex(ProxyType type, string address)
+        {
+            if (!ProxyUtility.ProxyRegex.IsMatch(address))
                 throw new Exception(Constant.Proxylist_AddressException);
 
-            Match proxyMatch = proxyRegex.Match(address);
+            Match proxyMatch = ProxyUtility.ProxyRegex.Match(address);
 
             Host = proxyMatch.Groups[1].Value;
             Port = proxyMatch.Groups[2].Value;
@@ -71,27 +96,12 @@ namespace MVThread
             }
             NetworkCredential = new NetworkCredential(Username, Password);
         }
+    }
 
-        public ProxyType GetProxyType()
-        {
-            if(Address.Scheme == Constant.Scheme_Http)
-                return ProxyType.Http;
-            else if(Address.Scheme == Constant.Scheme_Socks4)
-                return ProxyType.Socks4;
-            else if (Address.Scheme == Constant.Scheme_Socks4a)
-                return ProxyType.Socks4a;
-            else if (Address.Scheme == Constant.Scheme_Socks5)
-                return ProxyType.Socks5;
-            else
-                throw new Exception(Constant.Scheme_Exception);
-        }
+    internal static class ProxyUtility
+    {
+        public static readonly Regex _proxyRegex = new Regex(Constant.ProxyPattern, RegexOptions.Compiled);
 
-        public override string ToString()
-        {
-            if (!string.IsNullOrEmpty(NetworkCredential.UserName) && NetworkCredential.SecurePassword.Length > 0)
-                return $"{Address.Host}:{Address.Port}:{NetworkCredential.UserName}:{NetworkCredential.Password}";
-            else
-                return $"{Address.Host}:{Address.Port}";
-        }
+        public static Regex ProxyRegex => _proxyRegex;
     }
 }

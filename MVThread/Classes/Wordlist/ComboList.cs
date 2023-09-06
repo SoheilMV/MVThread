@@ -3,32 +3,16 @@
     public class ComboList : IWordList
     {
         private readonly object _obj = new object();
+        private readonly int _listsLength = 10000;
         private List<IEnumerable<string>> _list;
         private int _position = 0;
 
         public ComboList(IEnumerable<string> combos, int position = 0)
         {
-            _list = new List<IEnumerable<string>>();
+            _list = GetLists(combos);
 
             if (position > 0 && position < Count)
                 _position = position;
-
-            var cb = combos.ToList();
-            while (cb.Count > 0)
-            {
-                string[] array = new string[10000];
-                if (cb.Count >= 10000)
-                {
-                    cb.CopyTo(0, array, 0, 10000);
-                    _list.Add(array);
-                    cb.RemoveRange(0, 10000);
-                }
-                else
-                {
-                    _list.Add(cb.ToArray());
-                    cb.RemoveRange(0, cb.Count);
-                }
-            }
         }
 
         public int Position
@@ -45,9 +29,7 @@
             {
                 int count = 0;
                 foreach (var list in _list)
-                {
                     count += list.Count();
-                }
                 return count;
             }
         }
@@ -64,32 +46,50 @@
         {
             lock (_obj)
             {
-                int[] index = GetIndex(_position);
-                string account = _list[index[0]].ElementAt(index[1]);
+                var position = GetPosition(_position);
+                string account = _list[position.row].ElementAt(position.index);
                 _position++;
                 return account.Trim();
             }
         }
 
-        private int[] GetIndex(int position)
+        private (int row, int index) GetPosition(int position)
         {
-            int i = 0;
-            int pos = 0;
-
-            while (true)
+            int row = 0;
+            while (!(position < _listsLength || position < ((row + 1) * _listsLength)))
             {
-                if (position < 10000 || position < ((i + 1) * 10000))
-                    break;
-                else
-                    i++;
+                row++;
             }
 
-            if (position < 10000)
-                pos = position;
+            int index;
+            if (position < _listsLength)
+                index = position;
             else
-                pos = position - (i * 10000);
+                index = position - (row * _listsLength);
 
-            return new int[] { i, pos};
+            return (row, index);
+        }
+
+        private List<IEnumerable<string>> GetLists(IEnumerable<string> list)
+        {
+            List<IEnumerable<string>> lists = new List<IEnumerable<string>>();
+            var items = list.ToList();
+            while (items.Count > 0)
+            {
+                string[] array = new string[_listsLength];
+                if (items.Count >= _listsLength)
+                {
+                    items.CopyTo(0, array, 0, _listsLength);
+                    lists.Add(array);
+                    items.RemoveRange(0, _listsLength);
+                }
+                else
+                {
+                    lists.Add(items.ToArray());
+                    items.RemoveRange(0, items.Count);
+                }
+            }
+            return lists;
         }
     }
 }

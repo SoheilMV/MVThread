@@ -129,7 +129,7 @@ namespace MVThread
             List<Proxy> list = new List<Proxy>();
             foreach (var address in proxylist)
             {
-                if (Regex.IsMatch(address, Constant.ProxyPattern))
+                if (Regex.IsMatch(address, Constant.ProxyPattern,RegexOptions.Compiled))
                 {
                     Proxy proxy = new Proxy(type, address);
                     list.Add(proxy);
@@ -160,7 +160,7 @@ namespace MVThread
                     throw new Exception(Constant.Proxylist_FileException);
                 }
             }
-            else if (Regex.IsMatch(address, Constant.UrlPattern))
+            else if (Regex.IsMatch(address, Constant.UrlPattern, RegexOptions.Compiled))
             {
                 try
                 {
@@ -377,7 +377,7 @@ namespace MVThread
 
         private IEnumerable<string> ProxyFinder(string input)
         {
-            MatchCollection proxies = new Regex(Constant.ProxyPattern).Matches(input);
+            MatchCollection proxies = new Regex(Constant.ProxyPattern, RegexOptions.Compiled).Matches(input);
             List<string> result = new List<string>();
             foreach (object proxy in proxies)
             {
