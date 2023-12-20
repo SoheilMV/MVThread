@@ -11,6 +11,7 @@ namespace MVThread
     {
         #region Fields (private)
 
+        private SynchronizationContext _syncContext;
         private List<Task> _taskList;
 
         #endregion
@@ -38,10 +39,11 @@ namespace MVThread
 
         public bool IsRunning => RunnerStatus == RunnerStatus.Started;
         public bool IsCompleted => RunnerStatus == RunnerStatus.Completed;
+        public bool IsStopped => RunnerStatus == RunnerStatus.Stopped;
         public RunnerStatus RunnerStatus => _runnerStatus;
         public IProxyInfo ProxyInfo => _proxyManage;
         public string LogAddress { get { return _log.Address; } set { _log.Address = value; } }
-        public Progress Progress => _wordlist == null || _wordlist.Position == 0 ? new Progress(0, 0) : IsCompleted ? new Progress(_wordlist.Count, _wordlist.Count) : new Progress(_wordlist.Count, _wordlist.Position - 1);
+        public Progress Progress => _wordlist == null || _wordlist.Position == 0 ? new Progress(0, 0) : IsCompleted || IsStopped ? new Progress(_wordlist.Count, _wordlist.Count) : new Progress(_wordlist.Count, _wordlist.Position - 1);
         public int CPM => _datapool.CPM;
         public virtual int Active => _taskList.Where(t => !t.IsCompleted).ToList().Count;
         public string Elapsed
@@ -71,6 +73,7 @@ namespace MVThread
 
         public TaskRunner(bool useAsync = true)
         {
+            _syncContext = SynchronizationContext.Current ?? new SynchronizationContext();
             _taskList = new List<Task>();
             _datapool = new DataPool();
             _log = new Log();
@@ -315,6 +318,9 @@ namespace MVThread
                         Exception = ex,
                         Log = _log
                     });
+
+                    retry++;
+                    goto Retry;
                 }
 
                 if (_storage.ContainsID(id))
@@ -335,7 +341,17 @@ namespace MVThread
                         _stopwatch.Stop();
                         _datapool.Clear();
                         _cts.Dispose();
-                        try { OnStopped?.Invoke(this, new StopEventArgs() { WordList = _wordlist, Save = _save, Log = _log }); } catch (Exception ex) { OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnStopped", Exception = ex, Log = _log }); }
+                        _syncContext.Post(_ =>
+                        {
+                            try
+                            {
+                                OnStopped?.Invoke(this, new StopEventArgs() { WordList = _wordlist, Save = _save, Log = _log });
+                            }
+                            catch (Exception ex)
+                            {
+                                OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnStopped", Exception = ex, Log = _log });
+                            }
+                        }, null);
                     }
                     else if (activeThread == 0)
                     {
@@ -344,7 +360,17 @@ namespace MVThread
                         _datapool.Clear();
                         _cts.Dispose();
                         _runnerStatus = RunnerStatus.Completed;
-                        try { OnCompleted?.Invoke(this, new EventArgs()); } catch (Exception ex) { OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnCompleted", Exception = ex, Log = _log }); }
+                        _syncContext.Post(_ =>
+                        {
+                            try
+                            {
+                                OnCompleted?.Invoke(this, new EventArgs());
+                            }
+                            catch (Exception ex)
+                            {
+                                OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnCompleted", Exception = ex, Log = _log });
+                            }
+                        }, null);
                     }
                 }
                 catch

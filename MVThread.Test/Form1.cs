@@ -2,7 +2,6 @@
 using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.IO;
 
 namespace MVThread.Test
 {
@@ -61,17 +60,17 @@ namespace MVThread.Test
 
         private void Runner_OnStarted(object sender, EventArgs e)
         {
-            AddToListData("Started!"); //displays the start message when the runner start
+            listData.Items.Add("Started!"); //displays the start message when the runner start
         }
 
         private void Runner_OnStopped(object sender, StopEventArgs e)
         {
-            AddToListData("Stoped!"); //displays the stop message when the runner stop
+            listData.Items.Add("Stoped!"); //displays the stop message when the runner stop
         }
 
         private void Runner_OnCompeleted(object sender, EventArgs e)
         {
-            AddToListData("Completed!"); //displays the completed message when the runner complete
+            listData.Items.Add("Completed!"); //displays the completed message when the runner complete
         }
 
         private async Task<ConfigStatus> _runner_OnConfigAsync(object sender, DataEventArgs e)
