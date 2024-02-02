@@ -31,19 +31,19 @@ static void Main(string[] args)
         list.Add(i.ToString());
     }
     
-    IRunner runner = new TaskRunner();
+    IRunner runner = RunnerFactory.Create(RunnerType.Task);
     runner.OnStarted += Run_OnStarted;
     runner.OnStopped += Run_OnStopped;
     runner.OnCompleted += Run_OnCompleted;
-    runner.OnConfig += Run_OnConfig;
-    runner.OnConfigAsync += Run_OnConfigAsync;
+    runner.OnConfig += Run_OnConfig; //runner.UseAsync = false;
+    runner.OnConfigAsync += Run_OnConfigAsync; //runner.UseAsync = true;
 
     runner.SetWordlist(list); //Add list to runner
     runner.Start(2); //Add bot count in runner and start the runner
     
     while (runner.IsRunning)
     {
-        Console.Title = $"Bot : {runner.Active} - CPM : {runner.CPM} - Elapsed : {runner.Elapsed} ";
+        Console.Title = $"Bot : {runner.Active} - CPM : {runner.CPM} - Elapsed : {runner.Elapsed}";
         Thread.Sleep(100);
     }
 
