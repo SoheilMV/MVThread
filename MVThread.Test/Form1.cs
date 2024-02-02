@@ -18,7 +18,7 @@ namespace MVThread.Test
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _runner = new TaskRunner();
+            _runner = RunnerFactory.Create(RunnerType.Task);
             _runner.OnStarted += Runner_OnStarted;
             _runner.OnStopped += Runner_OnStopped;
             _runner.OnCompleted += Runner_OnCompeleted;

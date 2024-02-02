@@ -4,10 +4,10 @@
     <TargetFramework>net60</TargetFramework>
     <Authors>Soheil MV</Authors>
     <Company>MVSoft</Company>
-    <Copyright>© 2022-2023 MVSoft. All rights reserved.</Copyright>
+    <Copyright>© 2022-2024 MVSoft. All rights reserved.</Copyright>
     <Description>Multi Threading/Tasking</Description>
-    <Version>5.4.2</Version>
-    <PackageTags>thread,task,multi,multithread,multitask,treading</PackageTags>
+    <Version>5.4.3</Version>
+    <PackageTags>thread,task,multi,multithread,multitask,treading,parallelism,parallelization</PackageTags>
     <RepositoryType>Git</RepositoryType>
     <RepositoryUrl>https://github.com/SoheilMV/MVThread</RepositoryUrl>
     <PackageProjectUrl>https://github.com/SoheilMV/MVThread</PackageProjectUrl>
