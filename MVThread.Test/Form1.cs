@@ -18,7 +18,7 @@ namespace MVThread.Test
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _runner = RunnerFactory.Create(RunnerType.Task);
+            _runner = RunnerFactory.Create(RunnerType.Parallel);
             _runner.OnStarted += Runner_OnStarted;
             _runner.OnStopped += Runner_OnStopped;
             _runner.OnCompleted += Runner_OnCompeleted;
@@ -52,7 +52,7 @@ namespace MVThread.Test
 
         private void timer_Tick(object sender, EventArgs e)
         {
-            this.Text = $"Test - CPM : {_runner.CPM} - Proxy : {_runner.ProxyInfo.Count}";
+            this.Text = $"Test - Active : {_runner.Active} - CPM : {_runner.CPM}";
             lblChecked.Text = $"Checked : {_runner.Progress.Value}/{_runner.Progress.MaxValue}";
             pbChecked.Value = _runner.Progress.Value; //set progress bar value
             lblPercentage.Text = $"{_runner.Progress.Percentage}%"; //show progress percentage
@@ -60,6 +60,7 @@ namespace MVThread.Test
 
         private void Runner_OnStarted(object sender, EventArgs e)
         {
+            listData.Items.Add($"Runner => {_runner.RunnerType.ToString()}");
             listData.Items.Add("Started!"); //displays the start message when the runner start
         }
 

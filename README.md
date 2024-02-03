@@ -13,6 +13,11 @@ Multi Threading/Tasking in .NET
 - Keeping the information of each bot until the end of the work
 - Professional proxy management
 
+#### Runner Types
+- Task
+- Thread
+- Parallel
+
 #### Events
 - Start
 - Stop

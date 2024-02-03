@@ -41,9 +41,10 @@ namespace MVThread
         public bool IsCompleted => RunnerStatus == RunnerStatus.Completed;
         public bool IsStopped => RunnerStatus == RunnerStatus.Stopped;
         public RunnerStatus RunnerStatus => _runnerStatus;
+        public virtual RunnerType RunnerType => RunnerType.Task;
         public IProxyInfo ProxyInfo => _proxyManage;
         public string LogAddress { get { return _log.Address; } set { _log.Address = value; } }
-        public Progress Progress => _wordlist == null || _wordlist.Position == 0 ? new Progress(0, 0) : IsCompleted || IsStopped ? new Progress(_wordlist.Count, _wordlist.Count) : new Progress(_wordlist.Count, _wordlist.Position - 1);
+        public Progress Progress => _wordlist == null || _wordlist.Position == 0 ? new Progress(0, 0) : IsCompleted ? new Progress(_wordlist.Count, _wordlist.Count) : new Progress(_wordlist.Count, _wordlist.Position);
         public int CPM => _datapool.CPM;
         public virtual int Active => _taskList.Where(t => !t.IsCompleted).ToList().Count;
         public string Elapsed

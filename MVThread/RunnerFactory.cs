@@ -8,6 +8,7 @@
             {
                 RunnerType.Task => new TaskRunner(useAsync),
                 RunnerType.Thread => new ThreadRunner(useAsync),
+                RunnerType.Parallel => new ParallelRunner(useAsync),
                 _ => throw new NotImplementedException()
             };
             return result;

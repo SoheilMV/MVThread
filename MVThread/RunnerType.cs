@@ -4,5 +4,6 @@
     {
         Task,
         Thread,
+        Parallel
     }
 }

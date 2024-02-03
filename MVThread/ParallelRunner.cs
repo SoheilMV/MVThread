@@ -2,19 +2,19 @@
 
 namespace MVThread
 {
-    public class ThreadRunner : TaskRunner
+    public class ParallelRunner : TaskRunner
     {
         #region Fields (private)
 
         private SynchronizationContext _syncContext;
-        private List<Thread> _threadList;
+        private List<ParallelLoopState> _parallelList;
 
         #endregion
 
         #region Properties (public)
 
-        public override int Active => _threadList.Where(t => t != null).ToList().Count;
-        public override RunnerType RunnerType => RunnerType.Thread;
+        public override int Active => _parallelList.Where(p => p != null && !p.IsStopped).ToList().Count;
+        public override RunnerType RunnerType => RunnerType.Parallel;
 
         #endregion
 
@@ -31,10 +31,10 @@ namespace MVThread
 
         #region Constractor
 
-        public ThreadRunner(bool useAsync = true)
+        public ParallelRunner(bool useAsync = true)
         {
             _syncContext = SynchronizationContext.Current ?? new SynchronizationContext();
-            _threadList = new List<Thread>();
+            _parallelList = new List<ParallelLoopState>();
             _datapool = new DataPool();
             _log = new Log();
             _save = new Save();
@@ -70,7 +70,7 @@ namespace MVThread
                 _theEnd = false;
                 _run = true;
 
-                _threadList.Clear();
+                _parallelList.Clear();
 
                 _bot = bot;
                 if (_bot > _wordlist.Count - _position)
@@ -91,15 +91,24 @@ namespace MVThread
                 else
                     _proxyManage.Freez = false;
 
-                for (int i = 0; i < _bot; i++)
+                Task.Factory.StartNew(() =>
                 {
-                    int num = i;
-                    Thread thread = new Thread(() => { Config(num, _cts.Token); }) { IsBackground = true, Name = $"ID{num}" };
-                    thread.Start();
-                    _threadList.Add(thread);
-                }
+                    var options = new ParallelOptions
+                    {
+                        MaxDegreeOfParallelism = _bot,
+                        TaskScheduler = TaskScheduler.Default,
+                    };
 
-                new Thread(() => { CompletedTask(); }) { IsBackground = true }.Start();
+                    var result = Parallel.For(0, _bot, options, (long index, ParallelLoopState state) =>
+                    {
+                        _parallelList.Add(state);
+                        Config(_cts.Token, state);
+                    });
+
+                    _parallelList.Clear();
+
+                    CompletedParallel(result);
+                });
             }
         }
 
@@ -107,7 +116,7 @@ namespace MVThread
 
         #region Methods (private)
 
-        private void Config(int num, CancellationToken ct)
+        private void Config(CancellationToken token, ParallelLoopState state)
         {
             while (_wordlist.HasNext && !_theEnd)
             {
@@ -120,12 +129,15 @@ namespace MVThread
 
                 Retry:
 
-                if (ct.IsCancellationRequested)
+                if (token.IsCancellationRequested)
+                {
+                    state.Stop();
                     break;
+                }
 
                 try
                 {
-                    using (ProxyDetail proxyDetail = new ProxyDetail(_proxyManage, ct))
+                    using (ProxyDetail proxyDetail = new ProxyDetail(_proxyManage, token))
                     {
                         ConfigStatus? status = ConfigStatus.OK;
                         if (_useAsync)
@@ -188,59 +200,46 @@ namespace MVThread
                 if (_storage.ContainsID(id))
                     _storage.Remove(id);
             }
-
-            _threadList[num] = null;
         }
 
-        private void CompletedTask()
+        private void CompletedParallel(ParallelLoopResult result)
         {
-            while (_run)
+            if (result.IsCompleted)
             {
-                try
+                _run = false;
+                _stopwatch.Stop();
+                _datapool.Clear();
+                _cts.Dispose();
+                _runnerStatus = RunnerStatus.Completed;
+                _syncContext.Post(_ =>
                 {
-                    var activeThread = Active;
-                    if (activeThread == 0 && _runnerStatus == RunnerStatus.Stopped)
+                    try
                     {
-                        _run = false;
-                        _stopwatch.Stop();
-                        _datapool.Clear();
-                        _cts.Dispose();
-                        _syncContext.Post(_ =>
-                        {
-                            try
-                            {
-                                OnStopped?.Invoke(this, new StopEventArgs() { WordList = _wordlist, Save = _save, Log = _log });
-                            }
-                            catch (Exception ex)
-                            {
-                                OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnStopped", Exception = ex, Log = _log });
-                            }
-                        }, null);
+                        OnCompleted?.Invoke(this, new EventArgs());
                     }
-                    else if (activeThread == 0)
+                    catch (Exception ex)
                     {
-                        _run = false;
-                        _stopwatch.Stop();
-                        _datapool.Clear();
-                        _cts.Dispose();
-                        _runnerStatus = RunnerStatus.Completed;
-                        _syncContext.Post(_ =>
-                        {
-                            try
-                            {
-                                OnCompleted?.Invoke(this, new EventArgs());
-                            }
-                            catch (Exception ex)
-                            {
-                                OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnCompleted", Exception = ex, Log = _log });
-                            }
-                        }, null);
+                        OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnCompleted", Exception = ex, Log = _log });
                     }
-                }
-                catch
+                }, null);
+            }
+            else
+            {
+                _run = false;
+                _stopwatch.Stop();
+                _datapool.Clear();
+                _cts.Dispose();
+                _syncContext.Post(_ =>
                 {
-                }
-                Thread.Sleep(100);
+                    try
+                    {
+                        OnStopped?.Invoke(this, new StopEventArgs() { WordList = _wordlist, Save = _save, Log = _log });
+                    }
+                    catch (Exception ex)
+                    {
+                        OnException?.Invoke(this, new ExceptionEventArgs() { Location = "OnStopped", Exception = ex, Log = _log });
+                    }
+                }, null);
             }
         }
 

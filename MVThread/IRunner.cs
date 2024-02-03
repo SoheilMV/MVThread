@@ -14,6 +14,7 @@ namespace MVThread
         bool IsCompleted { get; }
         bool IsStopped { get; }
         RunnerStatus RunnerStatus { get; }
+        RunnerType RunnerType { get; }
         IProxyInfo ProxyInfo { get; }
         Progress Progress { get; }
         int CPM { get; }
