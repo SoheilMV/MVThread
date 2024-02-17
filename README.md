@@ -49,7 +49,7 @@ static void Main(string[] args)
     Console.ReadKey();
 }
 
-private static void onStarted(EventArgs e)
+private static void onStarted(StartEventArgs e)
 {
     Console.ForegroundColor = ConsoleColor.Green;
     Console.WriteLine("Started!"); //Displays the start message when the runner start

@@ -53,7 +53,7 @@ namespace MVThread.Test
             lblPercentage.Text = $"{_runner.Progress.Percentage}%"; //show progress percentage
         }
 
-        private void onStarted(EventArgs e)
+        private void onStarted(StartEventArgs e)
         {
             listData.Items.Add($"Runner => {_runner.RunnerType.ToString()}");
             listData.Items.Add("Started!"); //displays the start message when the runner start
