@@ -18,12 +18,7 @@ namespace MVThread.Test
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _runner = RunnerFactory.Create(RunnerType.Parallel);
-            _runner.OnStarted += Runner_OnStarted;
-            _runner.OnStopped += Runner_OnStopped;
-            _runner.OnCompleted += Runner_OnCompeleted;
-            _runner.OnConfigAsync += _runner_OnConfigAsync;
-            _runner.OnException += Runner_OnException;
+            _runner = RunnerFactory.Create(RunnerType.Parallel, onConfigAsync, onStarted, onStopped, onCompeleted, onException);
         }
 
         private void btnStart_Click(object sender, EventArgs e)
@@ -58,23 +53,23 @@ namespace MVThread.Test
             lblPercentage.Text = $"{_runner.Progress.Percentage}%"; //show progress percentage
         }
 
-        private void Runner_OnStarted(object sender, EventArgs e)
+        private void onStarted(EventArgs e)
         {
             listData.Items.Add($"Runner => {_runner.RunnerType.ToString()}");
             listData.Items.Add("Started!"); //displays the start message when the runner start
         }
 
-        private void Runner_OnStopped(object sender, StopEventArgs e)
+        private void onStopped(StopEventArgs e)
         {
             listData.Items.Add("Stoped!"); //displays the stop message when the runner stop
         }
 
-        private void Runner_OnCompeleted(object sender, EventArgs e)
+        private void onCompeleted()
         {
             listData.Items.Add("Completed!"); //displays the completed message when the runner complete
         }
 
-        private async Task<ConfigStatus> _runner_OnConfigAsync(object sender, DataEventArgs e)
+        private async Task<ConfigStatus> onConfigAsync(DataEventArgs e)
         {
             if (!e.Parameters.ContainsKey("data"))
             {
@@ -88,7 +83,7 @@ namespace MVThread.Test
             return ConfigStatus.OK;
         }
 
-        private void Runner_OnException(object sender, ExceptionEventArgs e)
+        private void onException(ExceptionEventArgs e)
         {
             e.Log.Write($"{e.Location}: {e.Exception.Message}"); //any error in events will show you
         }

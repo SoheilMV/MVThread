@@ -36,15 +36,9 @@ static void Main(string[] args)
         list.Add(i.ToString());
     }
     
-    IRunner runner = RunnerFactory.Create(RunnerType.Task);
-    runner.OnStarted += Run_OnStarted;
-    runner.OnStopped += Run_OnStopped;
-    runner.OnCompleted += Run_OnCompleted;
-    runner.OnConfig += Run_OnConfig; //runner.UseAsync = false;
-    runner.OnConfigAsync += Run_OnConfigAsync; //runner.UseAsync = true;
-
+    IRunner runner = RunnerFactory.Create(RunnerType.Parallel, onConfigAsync, onStarted, onStopped, onCompeleted);
     runner.SetWordlist(list); //Add list to runner
-    runner.Start(2); //Add bot count in runner and start the runner
+    runner.Start(10); //Add bot count in runner and start the runner
     
     while (runner.IsRunning)
     {
@@ -55,32 +49,25 @@ static void Main(string[] args)
     Console.ReadKey();
 }
 
-private static void Run_OnStarted(object sender, EventArgs e)
+private static void onStarted(EventArgs e)
 {
     Console.ForegroundColor = ConsoleColor.Green;
     Console.WriteLine("Started!"); //Displays the start message when the runner start
 }
 
-private static void Run_OnStopped(object sender, StopEventArgs e)
+private static void onStopped(StopEventArgs e)
 {
     Console.ForegroundColor = ConsoleColor.Red;
     Console.WriteLine("Stopped!"); //Displays the stop message when the runner stop
 }
 
-private static void Run_OnCompleted(object sender, EventArgs e)
+private static void onCompeleted()
 {
     Console.ForegroundColor = ConsoleColor.Yellow;
     Console.WriteLine("Completed!"); //Displays the completed message when the runner complete
 }
 
-private static Status Run_OnConfig(object sender, DataEventArgs e)
-{
-    Console.ForegroundColor = ConsoleColor.White;
-    Console.WriteLine(e.Data); //Display the value received from the list
-    return Status.OK;
-}
-
-private static async Task<Status> Run_OnConfigAsync(object sender, DataEventArgs e)
+private static async Task<ConfigStatus> onConfigAsync(DataEventArgs e)
 {
     Console.ForegroundColor = ConsoleColor.White;
     Console.WriteLine(e.Data); //Display the value received from the list
@@ -133,7 +120,7 @@ runner.SetProxylist(proxies, type);
 
 #### Overview of the configuration event
 ```csharp
-private static void Run_OnConfig(object sender, DataEventArgs e)
+private static async Task<ConfigStatus> onConfigAsync(DataEventArgs e)
 {
     string data = e.Data; //Get data from the entered list
     
