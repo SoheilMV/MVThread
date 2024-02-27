@@ -5,8 +5,8 @@
         private readonly object _obj = new object();
         private readonly int _listsLength = 10000;
         private ComboType _type;
-        private List<IEnumerable<string>> _list1;
-        private List<IEnumerable<string>> _list2;
+        private IEnumerable<IEnumerable<string>> _list1;
+        private IEnumerable<IEnumerable<string>> _list2;
 
         private int _calculate = 0;
         private int _row = 0;
@@ -53,33 +53,29 @@
             {
                 var userPosition = GetPosition(_row);
                 var passPosition = GetPosition(_cell);
-                string user = _list1[userPosition.row].ElementAt(userPosition.index);
-                string pass = _list2[passPosition.row].ElementAt(passPosition.index);
+                string user = _list1.ElementAt(userPosition.row).ElementAt(userPosition.index);
+                string pass = _list2.ElementAt(passPosition.row).ElementAt(passPosition.index);
                 SetPosition(1);
                 return $"{user.Trim()}{Constant.Wordlist_Separator}{pass.Trim()}";
             }
         }
 
-        private List<IEnumerable<string>> GetLists(IEnumerable<string> list)
+        private IEnumerable<IEnumerable<string>> GetLists(IEnumerable<string> list)
         {
-            List<IEnumerable<string>> lists = new List<IEnumerable<string>>();
             var items = list.ToList();
-            while (items.Count > 0)
+            while (items.Any())
             {
-                string[] array = new string[_listsLength];
-                if (items.Count >= _listsLength)
+                if (items.Count() >= _listsLength)
                 {
-                    items.CopyTo(0, array, 0, _listsLength);
-                    lists.Add(array);
-                    items.RemoveRange(0, _listsLength);
+                    yield return items.Take(_listsLength).ToList();
+                    items = items.Skip(_listsLength).ToList();
                 }
                 else
                 {
-                    lists.Add(items.ToArray());
-                    items.RemoveRange(0, items.Count);
+                    yield return items.ToList();
+                    items.Clear();
                 }
             }
-            return lists;
         }
 
         private void SetPosition(int position)

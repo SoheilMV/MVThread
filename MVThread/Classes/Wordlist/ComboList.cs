@@ -4,7 +4,7 @@
     {
         private readonly object _obj = new object();
         private readonly int _listsLength = 10000;
-        private List<IEnumerable<string>> _list;
+        private IEnumerable<IEnumerable<string>> _list;
         private int _position = 0;
 
         public ComboList(IEnumerable<string> combos, int position = 0)
@@ -47,7 +47,7 @@
             lock (_obj)
             {
                 var position = GetPosition(_position);
-                string account = _list[position.row].ElementAt(position.index);
+                string account = _list.ElementAt(position.row).ElementAt(position.index);
                 _position++;
                 return account.Trim();
             }
@@ -70,26 +70,22 @@
             return (row, index);
         }
 
-        private List<IEnumerable<string>> GetLists(IEnumerable<string> list)
+        private IEnumerable<IEnumerable<string>> GetLists(IEnumerable<string> list)
         {
-            List<IEnumerable<string>> lists = new List<IEnumerable<string>>();
             var items = list.ToList();
-            while (items.Count > 0)
+            while (items.Any())
             {
-                string[] array = new string[_listsLength];
-                if (items.Count >= _listsLength)
+                if (items.Count() >= _listsLength)
                 {
-                    items.CopyTo(0, array, 0, _listsLength);
-                    lists.Add(array);
-                    items.RemoveRange(0, _listsLength);
+                    yield return items.Take(_listsLength).ToList();
+                    items = items.Skip(_listsLength).ToList();
                 }
                 else
                 {
-                    lists.Add(items.ToArray());
-                    items.RemoveRange(0, items.Count);
+                    yield return items.ToList();
+                    items.Clear();
                 }
             }
-            return lists;
         }
     }
 }

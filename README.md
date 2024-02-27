@@ -1,5 +1,5 @@
 # MVThread [![Nuget](https://img.shields.io/nuget/v/MVThread)](https://www.nuget.org/packages/MVThread/)
-Multi Threading/Tasking in .NET
+Parallelization in .NET
 
 #### Features
 - Support any lists
