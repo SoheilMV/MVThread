@@ -5,7 +5,7 @@
     <Authors>Soheil MV</Authors>
     <Company>MVSoft</Company>
     <Copyright>© 2022-2024 MVSoft. All rights reserved.</Copyright>
-    <Description>Multi Threading/Tasking</Description>
+    <Description>Parallelization in .NET</Description>
     <Version>6.0.2</Version>
     <PackageTags>thread,task,parallel,multi,multithread,multitask,treading,parallelism,parallelization</PackageTags>
     <RepositoryType>Git</RepositoryType>
