@@ -28,7 +28,11 @@ Parallelization in .NET
 
 #### Using
 ```csharp
-static void Main(string[] args)
+using MVThread;
+
+main(args);
+
+void main(string[] args)
 {
     List<string> list = new List<string>();
     for (int i = 1; i <= 1000; i++) //Adds 1-1000 to the list
@@ -49,29 +53,29 @@ static void Main(string[] args)
     Console.ReadKey();
 }
 
-private static void onStarted(StartEventArgs e)
+void onStarted(StartEventArgs e)
 {
     Console.ForegroundColor = ConsoleColor.Green;
     Console.WriteLine("Started!"); //Displays the start message when the runner start
 }
 
-private static void onStopped(StopEventArgs e)
+void onStopped(StopEventArgs e)
 {
     Console.ForegroundColor = ConsoleColor.Red;
     Console.WriteLine("Stopped!"); //Displays the stop message when the runner stop
 }
 
-private static void onCompeleted()
+void onCompeleted()
 {
     Console.ForegroundColor = ConsoleColor.Yellow;
     Console.WriteLine("Completed!"); //Displays the completed message when the runner complete
 }
 
-private static async Task<ConfigStatus> onConfigAsync(DataEventArgs e)
+async Task<ConfigStatus> onConfigAsync(DataEventArgs e)
 {
     Console.ForegroundColor = ConsoleColor.White;
     Console.WriteLine(e.Data); //Display the value received from the list
-    return Status.OK;
+    return ConfigStatus.OK;
 }
 ```
 
@@ -125,7 +129,7 @@ private static async Task<ConfigStatus> onConfigAsync(DataEventArgs e)
     string data = e.Data; //Get data from the entered list
     
     if(e.Retry > 100) //Shows the current data retrieval count
-        return Status.TheEnd; //In certain circumstances, you can stop all the threads if you wish
+        return ConfigStatus.TheEnd; //In certain circumstances, you can stop all the threads if you wish
         
     if (!e.ProxyDetail.IsProxyLess) //Get a proxy at random
     {
@@ -137,12 +141,12 @@ private static async Task<ConfigStatus> onConfigAsync(DataEventArgs e)
     try
     {
         e.Save.WriteLine("goods.txt", data); //Save data in a file
-        return Status.OK; //To get the continuation of the list return Status.OK
+        return ConfigStatus.OK; //To get the continuation of the list return ConfigStatus.OK
     }
     catch (Exception ex)
     {
         e.Log.WriteLine(ex.Message); //You can save your messages as a log
-        return Status.Retry; //If the operation fails, you can retrieve the current data
+        return ConfigStatus.Retry; //If the operation fails, you can retrieve the current data
     }
 }
 ```
